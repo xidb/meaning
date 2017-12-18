@@ -1,0 +1,17 @@
+{
+  "name": "meaning",
+  "version": "0.1.0",
+  "description": "App to batch save lyrics to audio files",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "repository": {},
+  "author": "Dmitry Boytsov",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "electron-prebuilt-compile": "^1.8.2-beta.3"
+  }
+}
