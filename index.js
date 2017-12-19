@@ -1,7 +1,7 @@
 'use strict';
 
 // Import parts of electron to use
-const {app, BrowserWindow, Menu} = require('electron');
+const {app, BrowserWindow} = require('electron');
 const url = require('url');
 const path = require('path');
 
@@ -24,7 +24,7 @@ function createWindow() {
 			width: 1280,
 			height: 720
 		};
-		windowArgs = Object.assign(windowArgs, devWindowArgs);
+		windowArgs = {windowArgs, ...devWindowArgs};
 	}
 
 	mainWindow = new BrowserWindow(windowArgs);

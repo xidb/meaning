@@ -12,6 +12,7 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
+    "babel-preset-stage-2": "^6.24.1",
     "electron-prebuilt-compile": "^1.8.2-beta.3"
   }
 }
