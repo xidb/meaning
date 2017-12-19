@@ -1,7 +1,7 @@
 'use strict';
 
 // Import parts of electron to use
-const {app, BrowserWindow} = require('electron');
+const {app, BrowserWindow, shell, Menu, MenuItem} = require('electron');
 const url = require('url');
 const path = require('path');
 
@@ -28,7 +28,7 @@ function createWindow() {
 	}
 
 	mainWindow = new BrowserWindow(windowArgs);
-
+	
 	const indexPath = url.format({
 		protocol: 'file:',
 		pathname: path.join(__dirname, '', 'index.html'),
@@ -56,9 +56,30 @@ function createWindow() {
 	});
 }
 
+function changeMenu() {
+	let menu = Menu.getApplicationMenu();
+
+	menu.items.map(
+		(menuItem)  => {
+			if (menuItem.label === 'Help') {
+				menuItem.submenu.clear();
+				menuItem.submenu.append(
+					new MenuItem({
+						label: 'Google it',
+						click() { shell.openExternal('https://www.google.com/search?q=rick+n+roll'); }
+					})
+				);
+			}
+		}
+	);
+
+	Menu.setApplicationMenu(menu);
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+app.on('ready', changeMenu);
 app.on('ready', createWindow);
 
 // Quit when all windows are closed.
