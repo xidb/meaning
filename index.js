@@ -2,6 +2,7 @@
 
 // Import parts of electron to use
 const {app, BrowserWindow, shell, Menu, MenuItem} = require('electron');
+const windowStateKeeper = require('electron-window-state');
 const url = require('url');
 const path = require('path');
 
@@ -27,8 +28,21 @@ function createWindow() {
 		windowArgs = {windowArgs, ...devWindowArgs};
 	}
 
-	mainWindow = new BrowserWindow(windowArgs);
-	
+	// Load the previous state with fallback to defaults
+	let mainWindowState = windowStateKeeper({
+		windowArgs
+	});
+
+	// Create the window using the state information
+	mainWindow = new BrowserWindow({
+		x: mainWindowState.x,
+		y: mainWindowState.y,
+		width: mainWindowState.width,
+		height: mainWindowState.height
+	});
+
+	mainWindowState.manage(mainWindow);
+
 	const indexPath = url.format({
 		protocol: 'file:',
 		pathname: path.join(__dirname, '', 'index.html'),
