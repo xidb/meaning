@@ -80,7 +80,7 @@ function changeMenu() {
 				menuItem.submenu.append(
 					new MenuItem({
 						label: 'Google it',
-						click() { shell.openExternal('https://www.google.com/search?q=rick+n+roll'); }
+						click() { shell.openExternal('https://www.youtube.com/watch?v=dQw4w9WgXcQ?autoplay=1'); }
 					})
 				);
 			}
