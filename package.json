@@ -1,5 +1,5 @@
 {
-  "name": "meaning",
+  "name": "Meaning",
   "version": "0.1.0",
   "description": "App to batch save lyrics to audio files",
   "main": "index.js",
@@ -11,7 +11,9 @@
   "author": "Dmitry Boytsov",
   "license": "MIT",
   "dependencies": {
-    "electron-window-state": "^4.1.1"
+    "electron-window-state": "^4.1.1",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0"
   },
   "devDependencies": {
     "babel-preset-stage-2": "^6.24.1",
