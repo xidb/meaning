@@ -21,7 +21,7 @@ $fontColor: #fdff3f;
 
 // Mixins
 @mixin transition() {
-	transition: all 100ms;
+	transition: all 300ms;
 }
 
 @mixin center-container() {
@@ -56,9 +56,9 @@ $fontColor: #fdff3f;
 .cta-container {
 	@include center-container;
 	@include circle(400px, $fontColor);
-	@include transition;
+	@include transition();
 
-	&:hover {
+	&.dragover, &:hover {
 		background-color: $fontColor;
 		color: $backgroundColor;
 	}

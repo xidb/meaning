@@ -3,7 +3,8 @@
 	"development": {
 	  "application/javascript": {
 		"presets": ["es2016-node5", "react", "babel-preset-stage-2"],
-		"sourceMaps": "inline"
+		"sourceMaps": "inline",
+		"plugins": ["transform-decorators-legacy"]
 	  },
 	  "text/less": {
 		"dumpLineNumbers": "comments"

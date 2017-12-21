@@ -2,7 +2,7 @@
   "name": "Meaning",
   "version": "0.1.0",
   "description": "App to batch save lyrics to audio files",
-  "main": "index.js",
+  "main": "app/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron ."
@@ -16,7 +16,11 @@
     "react-dom": "^16.2.0"
   },
   "devDependencies": {
+    "babel-plugin-transform-decorators-legacy": "^1.3.4",
     "babel-preset-stage-2": "^6.24.1",
-    "electron-prebuilt-compile": "^1.8.2-beta.3"
+    "electron-prebuilt-compile": "^1.8.2-beta.3",
+    "prop-types": "^15.6.0",
+    "react-dnd": "^2.5.4",
+    "react-dnd-html5-backend": "^2.5.4"
   }
 }

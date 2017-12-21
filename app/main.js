@@ -45,7 +45,7 @@ function createWindow() {
 
 	const indexPath = url.format({
 		protocol: 'file:',
-		pathname: path.join(__dirname, '', 'index.html'),
+		pathname: path.join(__dirname, '', 'main.html'),
 		slashes: true
 	});
 	mainWindow.loadURL(indexPath);
