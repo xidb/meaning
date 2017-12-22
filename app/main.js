@@ -5,27 +5,27 @@ const {app, BrowserWindow, shell, Menu, MenuItem} = require('electron');
 const windowStateKeeper = require('electron-window-state');
 const url = require('url');
 const path = require('path');
-
 import {enableLiveReload} from 'electron-compile';
-enableLiveReload();
+
+let dev = process.env.DEV === 'true';
+
+if (dev) {
+	enableLiveReload();
+}
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
 
-let dev = process.env.DEV === 'true';
-
 function createWindow() {
-	let windowArgs = {
-		show: false
-	};
+	let windowArgs = {};
 
 	if (dev) {
 		const devWindowArgs = {
 			width: 1280,
 			height: 720
 		};
-		windowArgs = {windowArgs, ...devWindowArgs};
+		windowArgs = {...windowArgs, ...devWindowArgs};
 	}
 
 	// Load the previous state with fallback to defaults
@@ -49,17 +49,7 @@ function createWindow() {
 		slashes: true
 	});
 	mainWindow.loadURL(indexPath);
-
-	// Don't show until we are ready and loaded
-	mainWindow.once('ready-to-show', () => {
-		// Open the DevTools automatically if developing
-		if (dev) {
-			// mainWindow.maximize();
-			mainWindow.webContents.openDevTools();
-		}
-
-		mainWindow.show();
-	});
+	mainWindow.webContents.openDevTools();
 
 	// Emitted when the window is closed.
 	mainWindow.on('closed', function() {
@@ -70,22 +60,38 @@ function createWindow() {
 	});
 }
 
-function changeMenu() {
-	let menu = Menu.getApplicationMenu();
+function createMenu() {
+	let menu;
 
-	menu.items.map(
-		(menuItem)  => {
-			if (menuItem.label === 'Help') {
-				menuItem.submenu.clear();
-				menuItem.submenu.append(
-					new MenuItem({
-						label: 'Google it',
-						click() { shell.openExternal('https://www.youtube.com/watch?v=dQw4w9WgXcQ?autoplay=1'); }
-					})
-				);
+	const preciousMenuItem = {
+		label: 'Dance!',
+		click() { shell.openExternal('https://www.youtube.com/watch?v=dQw4w9WgXcQ?autoplay=1'); }
+	};
+
+	if (dev) {
+		// Just edit default menu
+		menu = Menu.getApplicationMenu();
+
+		menu.items.map(
+			(menuItem)  => {
+				if (menuItem.label === 'Help') {
+					menuItem.submenu.clear();
+					menuItem.submenu.append(
+						new MenuItem(preciousMenuItem)
+					);
+				}
 			}
-		}
-	);
+		);
+
+	} else {
+		// Create new
+		const subMenuHelp = {
+			label: 'Help',
+			submenu: [ preciousMenuItem ]
+		};
+
+		menu = Menu.buildFromTemplate([subMenuHelp]);
+	}
 
 	Menu.setApplicationMenu(menu);
 }
@@ -93,7 +99,7 @@ function changeMenu() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', changeMenu);
+app.on('ready', createMenu);
 app.on('ready', createWindow);
 
 // Quit when all windows are closed.

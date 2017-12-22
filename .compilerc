@@ -13,7 +13,8 @@
 	"production": {
 	  "application/javascript": {
 		"presets": ["es2016-node5", "react", "babel-preset-stage-2"],
-		"sourceMaps": "none"
+		"sourceMaps": "none",
+		"plugins": ["transform-decorators-legacy"]
 	  }
 	}
   }
