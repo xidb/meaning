@@ -46,17 +46,19 @@ $fontColor: #fdff3f;
 #main-window {
 	@include center-container;
 
-	background-color: $backgroundColor;
+	background: $backgroundColor;
+	background-image: url('background-texture.jpg');
+	background-size: cover;
 	font-family: 'Raleway', sans-serif;
 	font-weight: 100;
 	color: $fontColor;
 }
 
 // Elements
-.cta-container {
+.target-container {
 	@include center-container;
 	@include circle(400px, $fontColor);
-	@include transition();
+	@include transition;
 
 	&.dragover, &:hover {
 		background-color: $fontColor;
@@ -64,7 +66,7 @@ $fontColor: #fdff3f;
 	}
 }
 
-.cta {
+.target {
 	@include center-item;
 
 	font-size: 50px;

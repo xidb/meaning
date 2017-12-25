@@ -28,14 +28,14 @@ export default class Target extends Component {
 	render() {
 		const { canDrop, isOver, connectDropTarget } = this.props;
 		const isActive = canDrop && isOver;
-		let containerClass = 'cta-container';
+		let containerClass = 'target-container';
 		if (isActive) {
 			containerClass += ' dragover';
 		}
 
 		return connectDropTarget(
 			<div className={containerClass}>
-				<div className="cta">
+				<div className="target">
 					{isActive ? 'Release to drop' : 'Drag your music here'}
 				</div>
 			</div>
