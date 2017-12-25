@@ -24,13 +24,21 @@ $fontColor: #fdff3f;
 	transition: all 300ms;
 }
 
-@mixin center-container() {
+@mixin container-center() {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	height: 100%;
 }
 
-@mixin center-item() {
+@mixin container-left() {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	height: 100%;
+}
+
+@mixin item-center() {
 	max-width: 75%;
 	text-align: center;
 }
@@ -44,7 +52,7 @@ $fontColor: #fdff3f;
 
 // Windows
 #main-window {
-	@include center-container;
+	//@include center-container;
 
 	background: $backgroundColor;
 	background-image: url('background-texture.jpg');
@@ -55,8 +63,17 @@ $fontColor: #fdff3f;
 }
 
 // Elements
+.container-center {
+	@include container-center;
+
+}
+
+.container-left {
+	@include container-left;
+}
+
 .target-container {
-	@include center-container;
+	@include container-center;
 	@include circle(400px, $fontColor);
 	@include transition;
 
@@ -67,7 +84,13 @@ $fontColor: #fdff3f;
 }
 
 .target {
-	@include center-item;
+	@include item-center;
 
 	font-size: 50px;
+}
+
+.filelist {
+	width: calc(100% - 500px);
+	height: calc(100% - 300px);
+	padding: 15px;
 }

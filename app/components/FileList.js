@@ -39,7 +39,7 @@ export default class FileList extends Component {
 		const { files } = this.props;
 
 		return connectDropTarget(
-			<div>{FileList.list(files)}</div>
+			<div className="filelist">{FileList.list(files)}</div>
 		);
 	}
 }

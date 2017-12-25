@@ -24,16 +24,19 @@ export default class Container extends Component {
 		const {FILE} = NativeTypes;
 		const {files} = this.state;
 
-		let targetOrFileList = null;
+		let targetOrFileList;
+		let containerClass;
 		if (files.length === 0) {
 			targetOrFileList = <Target accepts={[FILE]} onDrop={this.handleFileDrop} />;
+			containerClass = 'container-center';
 		} else {
 			targetOrFileList = <FileList accepts={[FILE]} onDrop={this.handleFileDrop} files={files} />;
+			containerClass = 'container-left';
 		}
 
 		return (
 			<DragDropContextProvider backend={HTML5Backend}>
-				{targetOrFileList}
+				<div className={containerClass}>{targetOrFileList}</div>
 			</DragDropContextProvider>
 		);
 	}
