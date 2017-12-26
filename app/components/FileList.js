@@ -26,12 +26,11 @@ export default class FileList extends Component {
 		files: PropTypes.arrayOf(PropTypes.object),
 	};
 
-	static list(files) {
+	list(files) {
 		return files.map(file => (
-			<li key={file.name}>
-				{`'${file.name}' of size '${file.size}' and type '${file.type}'`}
-			</li>
+			<div key={file.path}>{file.path} {file.title}</div>
 		));
+
 	}
 
 	render() {
@@ -39,7 +38,7 @@ export default class FileList extends Component {
 		const { files } = this.props;
 
 		return connectDropTarget(
-			<div className="filelist">{FileList.list(files)}</div>
+			<div className="filelist">{this.list(files)}</div>
 		);
 	}
 }

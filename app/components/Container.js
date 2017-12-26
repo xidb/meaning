@@ -1,23 +1,94 @@
 import React, { Component } from 'react';
 import { DragDropContext, DragDropContextProvider } from 'react-dnd';
 import HTML5Backend, { NativeTypes } from 'react-dnd-html5-backend';
+
+import fs from 'fs';
+import { _ } from 'lodash/core';
+import ffmetadata from "ffmetadata";
+
 import Target from './Target';
 import FileList from './FileList';
 
 @DragDropContext(HTML5Backend)
 export default class Container extends Component {
+	static metaFields = [
+		'album', 'album_artist', 'artist', 'composer', 'date',
+		'disc', 'genre', 'lyrics', 'title', 'track'
+	];
+
 	constructor(props) {
 		super(props);
 
 		this.handleFileDrop = this.handleFileDrop.bind(this);
 
 		this.state = {files: []};
+		this.filtered = [];
+		this.index = 0;
 	}
 
 	handleFileDrop(item, monitor) {
-		if (monitor) {
-			this.setState({files: [...this.state.files, ...monitor.getItem().files]});
+		if (!monitor) {
+			return;
 		}
+
+		this.index = 0;
+
+		let files = _.sortBy(monitor.getItem().files, 'path');
+		this.filtered = files.filter(file => {
+			const isAudio = file.type.match(/audio\/.*/i);
+			let notExists = true;
+
+			for (let stateFile of this.state.files) {
+				if (stateFile.path === file.path) {
+					notExists = false;
+					break;
+				}
+			}
+
+			return isAudio && notExists;
+		});
+
+		this.filtered.map((file) => {
+			setTimeout( this.getMetadata(file), 0);
+		});
+	}
+
+	getMetadata(file) {
+		ffmetadata.read(file.path, (err, data) => {
+			if (!err) {
+				Container.metaFields.map(metaField => {
+					file[metaField] = typeof data[metaField] !== 'undefined'
+						? data[metaField]
+						: ''
+				});
+
+				setTimeout( this.saveImage(file), 0);
+
+				this.index++;
+
+				if (this.index === this.filtered.length) {
+					this.setState({files: [...this.state.files, ...this.filtered]});
+				}
+			}
+		});
+	}
+
+	saveImage(file) {
+		let artist = file.album_artist === ''
+			? file.artist
+			: file.album_artist;
+
+		let album = file.album === ''
+			? file.path.split('\\').slice(0, -1).join('\\') // filepath
+			: file.album;
+
+		const imagePath = '.imagecache/' + btoa(artist+album) + '.jpg';
+
+		if (!fs.existsSync(imagePath)) {
+			ffmetadata.read(file.path, {coverPath: imagePath}, (err, data) => {});
+		}
+
+		file.imagePath = imagePath;
 	}
 
 	render() {
@@ -34,7 +105,7 @@ export default class Container extends Component {
 			containerClass = 'container-left';
 		}
 
-		return (
+		return(
 			<DragDropContextProvider backend={HTML5Backend}>
 				<div className={containerClass}>{targetOrFileList}</div>
 			</DragDropContextProvider>

@@ -52,7 +52,7 @@ $fontColor: #fdff3f;
 
 // Windows
 #main-window {
-	//@include center-container;
+	@include container-center;
 
 	background: $backgroundColor;
 	background-image: url('background-texture.jpg');
@@ -90,7 +90,7 @@ $fontColor: #fdff3f;
 }
 
 .filelist {
-	width: calc(100% - 500px);
+	width: 100%;
 	height: calc(100% - 300px);
 	padding: 15px;
 }
