@@ -54,12 +54,19 @@ $fontColor: #fdff3f;
 #main-window {
 	@include container-center;
 
+	height: auto;
+	margin: 0;
 	background: $backgroundColor;
 	background-image: url('background-texture.jpg');
 	background-size: cover;
 	font-family: 'Raleway', sans-serif;
 	font-weight: 100;
 	color: $fontColor;
+	cursor: default;
+}
+
+#react-container {
+	width: 100%;
 }
 
 // Elements
@@ -93,4 +100,31 @@ $fontColor: #fdff3f;
 	width: 100%;
 	height: calc(100% - 300px);
 	padding: 15px;
+}
+
+.status-bar {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	min-height: 21px;
+	padding: 3px 12px;
+	box-shadow: inset 0 1px 0 #f5f4f5;
+	background-image: linear-gradient(to bottom, #e8e6e8 0%, #d1cfd1 100%);
+	font: 12px sans-serif;
+	color: #474747;
+}
+
+.spinner {
+	float: left;
+	width: 21px;
+	height: 21px;
+	background: url('spinner.gif') no-repeat;
+	background-size: contain;
+}
+
+.status-bar-status {
+	float: left;
+	line-height: 17px;
+	padding: 2px 12px;
 }

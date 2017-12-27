@@ -8,6 +8,7 @@ import ffmetadata from "ffmetadata";
 
 import Target from './Target';
 import FileList from './FileList';
+import StatusBar from './StatusBar';
 
 @DragDropContext(HTML5Backend)
 export default class Container extends Component {
@@ -21,7 +22,7 @@ export default class Container extends Component {
 
 		this.handleFileDrop = this.handleFileDrop.bind(this);
 
-		this.state = {files: []};
+		this.state = {files: [], status: ''};
 		this.filtered = [];
 		this.index = 0;
 	}
@@ -54,6 +55,7 @@ export default class Container extends Component {
 	}
 
 	getMetadata(file) {
+		this.state.status = `Processing ${file.path}`;
 		ffmetadata.read(file.path, (err, data) => {
 			if (!err) {
 				Container.metaFields.map(metaField => {
@@ -82,7 +84,7 @@ export default class Container extends Component {
 			? file.path.split('\\').slice(0, -1).join('\\') // filepath
 			: file.album;
 
-		const imagePath = '.imagecache/' + btoa(artist+album) + '.jpg';
+		const imagePath = `.imagecache/${btoa(encodeURIComponent(artist+album))}.jpg`;
 
 		if (!fs.existsSync(imagePath)) {
 			ffmetadata.read(file.path, {coverPath: imagePath}, (err, data) => {});
@@ -107,7 +109,10 @@ export default class Container extends Component {
 
 		return(
 			<DragDropContextProvider backend={HTML5Backend}>
-				<div className={containerClass}>{targetOrFileList}</div>
+				<div className={containerClass}>
+					{targetOrFileList}
+					<StatusBar status={this.state.status}/>
+				</div>
 			</DragDropContextProvider>
 		);
 	}
