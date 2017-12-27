@@ -3,6 +3,8 @@ import { DragDropContext, DragDropContextProvider } from 'react-dnd';
 import HTML5Backend, { NativeTypes } from 'react-dnd-html5-backend';
 
 import fs from 'fs';
+import dir from 'node-dir';
+import { File } from 'file-api';
 import { _ } from 'lodash/core';
 import ffmetadata from "ffmetadata";
 
@@ -34,8 +36,27 @@ export default class Container extends Component {
 
 		this.index = 0;
 
-		let files = _.sortBy(monitor.getItem().files, 'path');
-		this.filtered = files.filter(file => {
+		let dropped = _.sortBy(monitor.getItem().files, 'path');
+
+		const paths = dropped.filter(item => {
+			return fs.lstatSync(item.path).isDirectory();
+		});
+
+		if (paths.length > 0) {
+			paths.map(item => {
+				const filePaths = dir.files(item.path, {sync:true});
+
+				for (let filePath of filePaths) {
+					dropped.push(new File(filePath));
+				}
+			})
+		}
+
+		this.processFiles(dropped);
+	}
+
+	processFiles(dropped) {
+		this.filtered = dropped.filter(file => {
 			const isAudio = file.type.match(/audio\/.*/i);
 			let notExists = true;
 
@@ -45,7 +66,6 @@ export default class Container extends Component {
 					break;
 				}
 			}
-
 			return isAudio && notExists;
 		});
 
