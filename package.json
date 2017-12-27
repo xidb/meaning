@@ -5,10 +5,11 @@
 	"main": "app/main.js",
 	"scripts": {
 		"start": "cross-env FFMPEG_PATH=app/bin/ffmpeg electron .",
+		"dev": "cross-env FFMPEG_PATH=app/bin/ffmpeg DEV=true electron .",
 		"package-all": "npm run package-win && npm run package-linux && npm run package-mac",
-		"package-win": "npm run use-ffmpeg-linux && electron-forge package --platform win32 --verbose",
-		"package-linux": "npm run use-ffmpeg-mac && electron-forge package --platform linux --verbose",
-		"package-mac": "npm run use-ffmpeg-win && electron-forge package --platform darwin --verbose",
+		"package-win": "npm run use-ffmpeg-win && electron-forge package --platform win32 --verbose",
+		"package-linux": "npm run use-ffmpeg-linux && electron-forge package --platform linux --verbose",
+		"package-mac": "npm run use-ffmpeg-mac && electron-forge package --platform darwin --verbose",
 		"use-ffmpeg-win": "rm -rf app/bin && cp -r ffmpeg_static_bin/win64 app/bin",
 		"use-ffmpeg-linux": "rm -rf app/bin && cp -r ffmpeg_static_bin/linux-x86_64 app/bin",
 		"use-ffmpeg-mac": "rm -rf app/bin && cp -r ffmpeg_static_bin/mac-osx app/bin"
