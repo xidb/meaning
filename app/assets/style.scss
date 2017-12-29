@@ -15,32 +15,21 @@
 	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212, U+2215;
 }
 
-// Main vars
-$backgroundColor: #4a4a4a;
-$fontColor: #fdff3f;
-
 // Mixins
-@mixin transition() {
-	transition: all 300ms;
-}
-
-@mixin container-center() {
-	display: flex;
+@mixin center-content() {
+	display: grid;
 	align-items: center;
 	justify-content: center;
-	height: 100%;
-}
-
-@mixin container-left() {
-	display: flex;
-	align-items: center;
-	justify-content: flex-start;
-	height: 100%;
-}
-
-@mixin item-center() {
-	max-width: 75%;
 	text-align: center;
+}
+
+@mixin center-self() {
+	display: grid;
+	justify-self: center;
+}
+
+@mixin transition() {
+	transition: all 300ms;
 }
 
 @mixin circle($radius, $color) {
@@ -50,12 +39,16 @@ $fontColor: #fdff3f;
 	border-radius: $radius;
 }
 
-// Windows
-#main-window {
-	@include container-center;
+// Main vars
+$backgroundColor: #4a4a4a;
+$fontColor: #fdff3f;
 
-	height: auto;
+body {
 	margin: 0;
+}
+
+#main {
+	height: 100%;
 	background: url('background-texture.jpg') fixed $backgroundColor;
 	background-size: cover;
 	font-family: 'Raleway', sans-serif;
@@ -64,24 +57,51 @@ $fontColor: #fdff3f;
 	cursor: default;
 }
 
-#react-container {
-	width: 100%;
+.container {
+	display: grid;
+	height: 100%;
+	overflow: hidden;
+
+	&--target {
+		grid-template-columns: auto;
+		grid-template-rows: 1fr min-content 1fr 27px;
+		grid-template-areas:
+				"."
+				"target"
+				"."
+				"status-bar";
+	}
+
+	&--filelist {
+		grid-template-columns: auto 500px;
+		grid-template-rows: 1fr 90% 27px;
+		grid-template-areas:
+				". ."
+				"filelist lyrics"
+				"status-bar status-bar";
+
+		@media (max-width: 1000px) {
+			grid-template-columns: auto;
+			grid-template-rows: 1fr 60% 30% 27px;
+			grid-template-areas:
+					"."
+					"filelist"
+					"lyrics"
+					"status-bar";
+		}
+	}
 }
 
-// Elements
-.container-center {
-	@include container-center;
-
-}
-
-.container-left {
-	@include container-left;
-}
-
-.target-container {
-	@include container-center;
+.target {
+	@include center-content;
+	@include center-self;
 	@include circle(400px, $fontColor);
 	@include transition;
+
+	box-sizing: border-box;
+	grid-area: target;
+	padding: 60px;
+	font-size: 50px;
 
 	&.dragover, &:hover {
 		background-color: $fontColor;
@@ -89,41 +109,38 @@ $fontColor: #fdff3f;
 	}
 }
 
-.target {
-	@include item-center;
-
-	font-size: 50px;
-}
-
 .filelist {
-	width: 100%;
-	height: calc(100% - 300px);
-	padding: 15px;
+	grid-area: filelist;
+
+	overflow: auto;
 }
 
 .status-bar {
-	position: fixed;
-	bottom: 0;
-	left: 0;
-	width: 100%;
-	min-height: 21px;
+	grid-area: status-bar;
+
+	display: grid;
+	grid-template-columns: 21px auto;
+	grid-template-rows: auto;
+	grid-gap: 12px;
+
 	padding: 3px 12px;
 	box-shadow: inset 0 1px 0 #f5f4f5;
 	background-image: linear-gradient(to bottom, #e8e6e8 0%, #d1cfd1 100%);
 	font: 12px sans-serif;
 	color: #474747;
+
+	&__spinner {
+		background: url('spinner.gif') no-repeat;
+		background-size: contain;
+	}
+
+	&__status {
+		@include center-content;
+
+		height: 21px;
+		line-height: 21px;
+		overflow: hidden;
+		justify-content: left;
+	}
 }
 
-.spinner {
-	float: left;
-	width: 21px;
-	height: 21px;
-	background: url('spinner.gif') no-repeat;
-	background-size: contain;
-}
-
-.status-bar-status {
-	float: left;
-	line-height: 17px;
-	padding: 2px 12px;
-}

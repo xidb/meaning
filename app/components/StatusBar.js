@@ -34,14 +34,17 @@ export default class StatusBar extends Component {
 
 	render() {
 		const status = this.state.status;
-		const spinner = status.length > 0
-			? <span className="spinner" />
-			: '';
-		return(
-			<div className="status-bar">
-				{spinner}
-				<span className="status-bar-status">{this.state.status}</span>
-			</div>
-		);
+		if (status.length > 0) {
+			return(
+				<div className="status-bar">
+					<span className="status-bar__spinner" />
+					<span className="status-bar__status">{this.state.status}</span>
+				</div>
+			);
+		} else {
+			return(
+				<div className="status-bar" />
+			);
+		}
 	}
 }

@@ -121,10 +121,10 @@ export default class Container extends Component {
 		let containerClass;
 		if (files.length === 0) {
 			targetOrFileList = <Target accepts={[FILE]} onDrop={this.handleFileDrop} />;
-			containerClass = 'container-center';
+			containerClass = 'container container--target';
 		} else {
 			targetOrFileList = <FileList accepts={[FILE]} onDrop={this.handleFileDrop} files={files} />;
-			containerClass = 'container-left';
+			containerClass = 'container container--filelist';
 		}
 
 		return(

@@ -1,18 +1,18 @@
 <html>
 
 <head>
-	<link rel="stylesheet" type="text/less" href="assets/style.scss" />
+	<link rel="stylesheet" type="text/scss" href="assets/style.scss" />
 </head>
 
-<body id="main-window">
-	<div id="react-container">
+<body>
+	<div id="main">
 	</div>
 	<script type="application/javascript">
 		import React from 'react';
 		import { render } from 'react-dom';
 		import Container from './components/Container';
 
-		render(<Container />, document.getElementById('react-container'));
+		render(<Container />, document.getElementById('main'));
 	</script>
 </body>
 
