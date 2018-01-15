@@ -2,17 +2,17 @@ import React, { Component } from 'react';
 import { DragDropContext, DragDropContextProvider } from 'react-dnd';
 import HTML5Backend, { NativeTypes } from 'react-dnd-html5-backend';
 
-import fs from 'fs';
 import _ from 'lodash/core';
+import fs from 'fs';
+import { requireTaskPool } from 'electron-remote';
+import Task from './Task';
+
+const TaskPool = requireTaskPool(require.resolve('./Task'));
 
 import Target from './Target';
 import FileList from './FileList';
 import StatusBar from './StatusBar';
 import Lyrics from './Lyrics';
-import { requireTaskPool } from 'electron-remote';
-import Task from './Task';
-
-const TaskPool = requireTaskPool(require.resolve('./Task'));
 
 @DragDropContext(HTML5Backend)
 export default class Container extends Component {
@@ -45,18 +45,23 @@ export default class Container extends Component {
 
 		if (dirs.length > 0) {
 			const paths = _.map(dirs, 'path');
-			const filePathArrays = await TaskPool.parseDirs(paths);
-			let files = [];
 
-			filePathArrays.map(array => {
-				files.push(...array);
-			});
+			const subdirsChunked = await TaskPool.getSubdirsChunked(paths, 3);
 
-			await this.processFiles(files);
+			for (let chunk of subdirsChunked) {
+				const filePathArrays = await TaskPool.parseDirs(chunk);
+				let files = [];
+
+				filePathArrays.map(array => {
+					files.push(...array);
+				});
+
+				await this.processFiles(files, subdirsChunked.length);
+			}
 		}
 	}
 
-	async processFiles(files) {
+	async processFiles(files, timeout) {
 		const filtered = this.filterAudio(files);
 
 		this.setStatus(filtered);
@@ -64,7 +69,7 @@ export default class Container extends Component {
 		if (filtered.length < 20) {
 			this.setFiles(_.sortBy(await Task.getMetadata(filtered), 'path'));
 		} else {
-			this.setFiles(_.sortBy(await TaskPool.getMetadata(filtered), 'path'));
+			this.setFiles(_.sortBy(await TaskPool.getMetadata(filtered, timeout), 'path'));
 		}
 	}
 
