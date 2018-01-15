@@ -54,6 +54,18 @@ export default class FileList extends Component {
 		this.setState({ rows: Math.floor(tableHeight/rowHeight) });
 	}
 
+	shouldComponentUpdate(nextProps, nextState) {
+		if (this.state.rows !== nextState.rows) {
+			return true;
+		}
+
+		if (this.props.files.length !== nextProps.files.length) {
+			return true;
+		}
+
+		return false;
+	}
+
 	render() {
 		const { canDrop, isOver, connectDropTarget } = this.props;
 		const { files } = this.props;
