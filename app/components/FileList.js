@@ -115,7 +115,9 @@ export default class FileList extends Component {
 					getTdProps={(state, rowInfo, column, instance) => {
 						return {
 							onClick: (e, handleOriginal) => {
-								this.props.songSelected(rowInfo.original);
+								if (rowInfo && rowInfo.original) {
+									this.props.songSelected(rowInfo.original);
+								}
 							}
 						}
 					}}
