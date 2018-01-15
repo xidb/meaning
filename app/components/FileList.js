@@ -87,6 +87,10 @@ export default class FileList extends Component {
 				Header: 'Title',
 				accessor: 'title'
 			},
+			{
+				Header: 'Lyrics',
+				accessor: 'lyrics'
+			},
 		];
 
 		const sort = [
@@ -96,6 +100,13 @@ export default class FileList extends Component {
 		return connectDropTarget(
 			<div className="filelist">
 				<ReactTable
+					getTdProps={(state, rowInfo, column, instance) => {
+						return {
+							onClick: (e, handleOriginal) => {
+								this.props.songSelected(rowInfo.original);
+							}
+						}
+					}}
 					data={files}
 					columns={columns}
 					showPageSizeOptions={false}

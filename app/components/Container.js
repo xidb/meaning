@@ -8,6 +8,7 @@ import _ from 'lodash/core';
 import Target from './Target';
 import FileList from './FileList';
 import StatusBar from './StatusBar';
+import Lyrics from './Lyrics';
 import { requireTaskPool } from 'electron-remote';
 import Task from './Task';
 
@@ -20,7 +21,7 @@ export default class Container extends Component {
 
 		this.handleFileDrop = this.handleFileDrop.bind(this);
 
-		this.state = {files: [], status: ''};
+		this.state = {files: [], status: '', selected: {}};
 	}
 
 	async handleFileDrop(item, monitor) {
@@ -99,25 +100,37 @@ export default class Container extends Component {
 		this.setState({status: inputString});
 	}
 
+	songSelected(file) {
+		this.setState({selected: file});
+	}
+
 	render() {
 		const {FILE} = NativeTypes;
 		const {files} = this.state;
 
-		let targetOrFileList;
+		let target;
+		let fileList;
+		let lyrics;
 		let containerClass;
 		if (files.length === 0) {
-			targetOrFileList = <Target accepts={[FILE]} onDrop={this.handleFileDrop} />;
+			target = <Target accepts={[FILE]} onDrop={this.handleFileDrop} />;
 			containerClass = 'container container--target';
 		} else {
-			targetOrFileList = <FileList accepts={[FILE]} onDrop={this.handleFileDrop} files={files} />;
+			fileList = <FileList
+				accepts={[FILE]}
+				onDrop={this.handleFileDrop}
+				files={files}
+				songSelected={this.songSelected.bind(this)}
+			/>;
+			lyrics = <Lyrics file={this.state.selected} />;
 			containerClass = 'container container--filelist';
 		}
 
 		return(
 			<DragDropContextProvider backend={HTML5Backend}>
 				<div className={containerClass}>
-					{targetOrFileList}
-					<StatusBar status={this.state.status}/>
+					{target}{fileList}{lyrics}
+					<StatusBar status={this.state.status} />
 				</div>
 			</DragDropContextProvider>
 		);
