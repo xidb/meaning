@@ -14,11 +14,10 @@ export default class Lyrics extends Component {
 				? 'Nothing here...'
 				: false;
 
-		const output = error || file.lyrics;
+		const output = error || file.lyrics.replace(/(?:\r\n|\r|\n)/g, '<br>');
 
 		return(
-			<div className="lyrics">
-				{output}
+			<div className="lyrics" dangerouslySetInnerHTML={{__html: output}}>
 			</div>
 		);
 	}
