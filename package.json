@@ -1,18 +1,20 @@
 {
 	"name": "Meaning",
 	"version": "0.1.0",
-	"description": "App to batch save lyrics to audio files",
+	"description": "App to batch save lyrics to audio files from places on internet",
 	"main": "app/main.js",
 	"scripts": {
 		"start": "cross-env FFMPEG_PATH=app/bin/ffmpeg electron .",
 		"dev": "cross-env FFMPEG_PATH=app/bin/ffmpeg DEV=true electron .",
-		"package-all": "npm run package-win && npm run package-linux && npm run package-mac",
-		"package-win": "npm run use-ffmpeg-win && electron-forge package --platform win32 --verbose",
-		"package-linux": "npm run use-ffmpeg-linux && electron-forge package --platform linux --verbose",
-		"package-mac": "npm run use-ffmpeg-mac && electron-forge package --platform darwin --verbose",
+		"package-all": "npm run package-win && npm run package-linux && npm run package-mac && npm run rebuild-sqlite3",
+		"package-win": "npm run use-ffmpeg-win && electron-forge package --platform win32 --verbose && npm run rebuild-sqlite3",
+		"package-linux": "npm run use-ffmpeg-linux && electron-forge package --platform linux --verbose && npm run rebuild-sqlite3",
+		"package-mac": "npm run use-ffmpeg-mac && electron-forge package --platform darwin --verbose && npm run rebuild-sqlite3",
 		"use-ffmpeg-win": "rm -rf app/bin && cp -r ffmpeg_static_bin/win64 app/bin",
 		"use-ffmpeg-linux": "rm -rf app/bin && cp -r ffmpeg_static_bin/linux-x86_64 app/bin",
-		"use-ffmpeg-mac": "rm -rf app/bin && cp -r ffmpeg_static_bin/mac-osx app/bin"
+		"use-ffmpeg-mac": "rm -rf app/bin && cp -r ffmpeg_static_bin/mac-osx app/bin",
+		"rebuild-sqlite3": "electron-rebuild -f -w sqlite3 -p && npm run sqlite-migrate",
+		"sqlite-migrate": "node app/migrate.js"
 	},
 	"repository": {},
 	"author": "Dmitry Boytsov",
@@ -31,12 +33,14 @@
 		"react-dnd": "^2.5.4",
 		"react-dnd-html5-backend": "^2.5.4",
 		"react-dom": "^16.2.0",
-		"react-table": "^6.7.6"
+		"react-table": "^6.7.6",
+		"sqlite-crud": "git://github.com/artemdemo/sqlite-crud.git"
 	},
 	"devDependencies": {
 		"babel-plugin-transform-decorators-legacy": "^1.3.4",
 		"babel-preset-stage-2": "^6.24.1",
 		"electron-prebuilt-compile": "1.8.2-beta.3",
+		"electron-rebuild": "^1.7.3",
 		"prop-types": "^15.6.0"
 	},
 	"config": {

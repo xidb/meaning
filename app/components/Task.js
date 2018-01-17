@@ -1,8 +1,9 @@
 import fs from 'fs';
-import Promise from 'bluebird';
-import ffmetadata from 'ffmetadata';
 import dir from 'node-dir';
 import { File } from 'file-api';
+import db from 'sqlite-crud';
+import Promise from 'bluebird';
+import ffmetadata from 'ffmetadata';
 
 Array.prototype.chunk = function(groupsize) {
 	let sets = [], chunks, i = 0;
@@ -64,19 +65,23 @@ module.exports.getMetadata = async function(files, timeout) {
 		'disc', 'genre', 'lyrics', 'title', 'track'
 	];
 
+	db.connectToDB('app/db.sqlite');
+
 	return Promise.map(files, file => {
 		return new Promise(resolve => {
 			setTimeout(resolve => {
 				ffmetadata.read(file.path, (err, data) => {
+					let dbObject = {};
+
 					metaFields.map(metaField => {
-						file[metaField] = typeof data[metaField] !== 'undefined'
+						file[metaField] = dbObject[metaField] = typeof data[metaField] !== 'undefined'
 							? data[metaField]
 							: ''
 					});
 
-					if (timeout < 20) {
-						saveImage(file);
-					}
+					dbObject.path = file.path;
+
+					db.insertRow('song', dbObject);
 
 					resolve(file);
 				})

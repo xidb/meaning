@@ -4,6 +4,7 @@ import HTML5Backend, { NativeTypes } from 'react-dnd-html5-backend';
 
 import _ from 'lodash/core';
 import fs from 'fs';
+import db from 'sqlite-crud';
 import { requireTaskPool } from 'electron-remote';
 import Task from './Task';
 
@@ -22,6 +23,15 @@ export default class Container extends Component {
 		this.handleFileDrop = this.handleFileDrop.bind(this);
 
 		this.state = {files: [], status: '', selected: {}};
+		this.fetchFromDb();
+	}
+
+	async fetchFromDb() {
+		await db.connectToDB('app/db.sqlite');
+		const songs = await db.queryRows('SELECT * FROM song');
+		if (songs.length > 0) {
+			this.setFiles(songs);
+		}
 	}
 
 	async handleFileDrop(item, monitor) {
