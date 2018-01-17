@@ -136,3 +136,4 @@ fabric.properties
 .idea/
 /app/bin/
 /.imagecache/
+/app/db.sqlite

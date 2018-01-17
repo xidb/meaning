@@ -62,7 +62,8 @@
 					".idea",
 					".gitignore",
 					"ffmpeg_static_bin",
-					".imagecache"
+					".imagecache",
+				  	"/app/db.sqlite"
 				]
 			},
 			"electronWinstallerConfig": {
