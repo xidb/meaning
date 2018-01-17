@@ -21,7 +21,8 @@ export default class FileList extends Component {
 	constructor() {
 		super();
 		this.state = {
-			rows: 23
+			rows: 24,
+			search: ''
 		}
 	}
 
@@ -44,32 +45,46 @@ export default class FileList extends Component {
 	}
 
 	updateDimensions() {
-		let containerHeight = window.innerHeight * 0.9;
+		let containerHeight = window.innerHeight - 27; // status bar
 		const filelist = document.querySelector('.filelist');
 		if (filelist !== null) {
 			containerHeight = filelist.offsetHeight;
 		}
-		const tableHeight = containerHeight - 85 - 28.5; // pagination and table header height
+		const tableHeight = containerHeight - 15 - 24.5 - 85 - 28.5; // padding, search, table header, pagination
+		//  height
 		const rowHeight = 33.5;
 		this.setState({ rows: Math.floor(tableHeight/rowHeight) });
 	}
 
 	shouldComponentUpdate(nextProps, nextState) {
-		if (this.state.rows !== nextState.rows) {
+		if (this.state !== nextState) {
 			return true;
 		}
 
-		if (this.props.files.length !== nextProps.files.length) {
-			return true;
+		if (this.props.files.length === nextProps.files.length) {
+			return false;
 		}
 
-		return false;
+		return true;
 	}
 
 	render() {
 		const { canDrop, isOver, connectDropTarget } = this.props;
-		const { files } = this.props;
+		let { files } = this.props;
 		const { rows } = this.state;
+		const { search } = this.state;
+
+		if (search !== '') {
+			files = files.filter(file => {
+
+				return 	file.album_artist.includes(search)  ||
+						file.date.includes(search)          ||
+						file.album.includes(search)         ||
+						file.disc.includes(search)          ||
+						String(file.track).includes(search) ||
+						file.title.includes(search)
+			})
+		}
 
 		const columns = [
 			{
@@ -107,6 +122,11 @@ export default class FileList extends Component {
 
 		return connectDropTarget(
 			<div className="filelist">
+				<input
+					className="search"
+					placeholder="Search"
+					onChange={e => this.setState({search: e.target.value})}
+				/>
 				<ReactTable
 					getTdProps={(state, rowInfo, column, instance) => {
 						return {
@@ -122,6 +142,13 @@ export default class FileList extends Component {
 					showPageSizeOptions={false}
 					pageSize={rows}
 					className="-striped -highlight"
+					previousText="&#11207; Previous"
+					nextText="Next &#11208;"
+					loadingText="Loading..."
+					noDataText="Nothing here..."
+					pageText=""
+					ofText="of"
+					rowsText="rows"
 				/>
 			</div>
 		);
