@@ -81,6 +81,20 @@ module.exports.getMetadata = async function(files, timeout) {
 						if (metaField === 'album_artist' && typeof data[metaField] === 'undefined') {
 							data[metaField] = data['artist'];
 						}
+						if (metaField === 'disc') {
+							if (typeof data[metaField] === 'undefined') {
+								data[metaField] = '1';
+							} else {
+								data[metaField] = parseInt(data[metaField]);
+							}
+						}
+						if (metaField === 'track') {
+							if (typeof data[metaField] === 'undefined') {
+								data[metaField] = null;
+							} else {
+								data[metaField] = parseInt(data[metaField]);
+							}
+						}
 
 						file[metaField] = dbObject[metaField] = typeof data[metaField] !== 'undefined'
 							? data[metaField]

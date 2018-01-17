@@ -105,10 +105,6 @@ export default class FileList extends Component {
 			},
 		];
 
-		const sort = [
-			{id: 'album_artist'}, {id: 'date'}
-		];
-
 		return connectDropTarget(
 			<div className="filelist">
 				<ReactTable
@@ -125,7 +121,6 @@ export default class FileList extends Component {
 					columns={columns}
 					showPageSizeOptions={false}
 					pageSize={rows}
-					defaultSorted={sort}
 					className="-striped -highlight"
 				/>
 			</div>

@@ -1,6 +1,6 @@
 {
   "queries": [
-	"CREATE TABLE song (id INTEGER PRIMARY KEY, path TEXT, album_artist TEXT, artist TEXT, album TEXT, date TEXT, disc TEXT, track TEXT, title TEXT, lyrics TEXT, genre TEXT, composer TEXT);",
+	"CREATE TABLE song (id INTEGER PRIMARY KEY, path TEXT, album_artist TEXT, artist TEXT, album TEXT, date TEXT, disc TEXT, track INTEGER, title TEXT, lyrics TEXT, genre TEXT, composer TEXT);",
 	"CREATE UNIQUE INDEX path_idx ON song (path);"
   ]
 }

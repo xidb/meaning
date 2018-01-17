@@ -31,7 +31,7 @@ export default class Container extends Component {
 
 		// await db.run('DELETE FROM song');
 
-		const songs = await db.queryRows('SELECT * FROM song');
+		const songs = await db.queryRows('SELECT * FROM song ORDER by album_artist, date, disc, track');
 
 		if (songs.length > 0) {
 			this.setFiles(songs);
