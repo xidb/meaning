@@ -25,7 +25,11 @@ module.exports.getSubdirsChunked = async function(paths, chunks) {
 					throw err;
 				}
 
-				resolve(subdirs);
+				if (subdirs.length > 0) {
+					resolve(subdirs);
+				} else {
+					resolve([path]);
+				}
 			});
 		});
 	});
