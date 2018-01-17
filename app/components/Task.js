@@ -74,6 +74,10 @@ module.exports.getMetadata = async function(files, timeout) {
 					let dbObject = {};
 
 					metaFields.map(metaField => {
+						if (metaField === 'album_artist' && typeof data[metaField] === 'undefined') {
+							data[metaField] = data['artist'];
+						}
+
 						file[metaField] = dbObject[metaField] = typeof data[metaField] !== 'undefined'
 							? data[metaField]
 							: ''
@@ -94,13 +98,11 @@ module.exports.getMetadata = async function(files, timeout) {
 		// even if it does not have image
 		// to not store it two times
 		// if another file has image
-		let artist = file.album_artist === ''
-			? file.artist
-			: file.album_artist;
+		let artist = file['album_artist'];
 
-		let album = file.album === ''
+		let album = file['album'] === ''
 			? file.path.split('\\').slice(0, -1).join('\\') // dir path
-			: file.album;
+			: file['album'];
 
 		const imagePath = `.imagecache/${btoa(encodeURIComponent(artist+album))}.jpg`;
 

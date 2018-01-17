@@ -28,7 +28,11 @@ export default class Container extends Component {
 
 	async fetchFromDb() {
 		await db.connectToDB('app/db.sqlite');
+
+		// await db.run('DELETE FROM song');
+
 		const songs = await db.queryRows('SELECT * FROM song');
+
 		if (songs.length > 0) {
 			this.setFiles(songs);
 		}
