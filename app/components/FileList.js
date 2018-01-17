@@ -74,7 +74,7 @@ export default class FileList extends Component {
 		const columns = [
 			{
 				Header: 'Artist',
-				accessor: 'artist'
+				accessor: 'album_artist'
 			},
 			{
 				Header: 'Year',
@@ -106,7 +106,7 @@ export default class FileList extends Component {
 		];
 
 		const sort = [
-			{id: 'album_artist'}, {id: 'year'}
+			{id: 'album_artist'}, {id: 'date'}
 		];
 
 		return connectDropTarget(
