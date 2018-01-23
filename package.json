@@ -6,7 +6,7 @@
 	"scripts": {
 		"start": "electron .",
 		"dev": "cross-env DEV=true electron .",
-		"package-all": "npm run package-win && npm run package-linux && npm run package-mac && npm run rebuild-sqlite3",
+		"package-all": "npm run package-win && npm run package-linux && npm run package-mac",
 		"package-win": "electron-forge package --platform win32 --verbose && npm run rebuild-sqlite3",
 		"package-linux": "electron-forge package --platform linux --verbose && npm run rebuild-sqlite3",
 		"package-mac": "electron-forge package --platform darwin --verbose && npm run rebuild-sqlite3",
