@@ -24,6 +24,7 @@
 		"electron-window-state": "^4.1.1",
 		"file-api": "^0.10.4",
 		"lodash": "^4.17.4",
+		"mime": "^1.6.0",
 		"node-dir": "^0.1.17",
 		"react": "^16.2.0",
 		"react-dnd": "^2.5.4",
