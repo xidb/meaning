@@ -73,56 +73,59 @@ module.exports.getMetadata = async function(files) {
 
 	return Promise.map(files, file => {
 		return new Promise(resolve => {
-			const meta = taglib.readTagsSync(file.path);
+			setTimeout(resolve => {
+				const meta = taglib.readTagsSync(file.path);
 
-			// Artist and title tags are required
-			if (!meta['artist'] || !meta['title']) {
-				return resolve({error: `Required artist or title tags not found for ${file.path}`});
-			}
-
-			let dbObject = {};
-
-			metaFields.map(field => {
-				if (field === 'albumartist' && !meta[field]) {
-					meta[field] = meta['artist'];
+				// Artist and title tags are required
+				if (!meta['artist'] || !meta['title']) {
+					return resolve({error: `Required artist or title tags not found for ${file.path}`});
 				}
 
-				if (field === 'discnumber') {
-					meta[field] = parseInt(meta[field]);
-				}
+				let dbObject = {};
 
-				if (field === 'image_name' && meta['pictures']) {
-					// Make unique image path for album,
-					// even if it does not have image
-					// to not store it two times
-					// if another file in album has image
-					const album = meta['album']
-						? meta['album']
-						: file.path.split('\\').slice(0, -1).join('\\'); // use dir path if album empty
-
-					const picture = meta['pictures'][0];
-					const maybeExt = mime.extension(picture['mimetype']);
-					const imageExt = maybeExt !== void 0
-						? maybeExt.replace('jpeg', 'jpg')
-						: 'jpg';
-					meta['image_name'] = btoa(encodeURIComponent(meta['albumartist'] + album)) + `.${imageExt}`;
-
-					// Save file
-					const imagePath = `.imagecache/${meta['image_name']}`;
-					if (!fs.exists(imagePath)) {
-						fs.writeFile(imagePath, picture['picture'], null, () => {});
+				metaFields.map(field => {
+					if (field === 'albumartist' && !meta[field]) {
+						meta[field] = meta['artist'];
 					}
-				}
 
-				file[field] = dbObject[field] = meta[field]
-					? meta[field]
-					: null
-			});
+					if (field === 'discnumber') {
+						meta[field] = parseInt(meta[field]);
+					}
 
-			dbObject.path = file.path;
-			db.insertRow('song', dbObject);
+					if (field === 'image_name' && meta['pictures']) {
+						// Make unique image path for album,
+						// even if it does not have image
+						// to not store it two times
+						// if another file in album has image
+						const album = meta['album']
+							? meta['album']
+							: file.path.split('\\').slice(0, -1).join('\\'); // use dir path if album empty
 
-			resolve(file);
+						const picture = meta['pictures'][0];
+						const maybeExt = mime.extension(picture['mimetype']);
+						const imageExt = maybeExt !== void 0
+							? maybeExt.replace('jpeg', 'jpg')
+							: 'jpg';
+						meta['image_name'] = btoa(encodeURIComponent(meta['albumartist'] + album)) + `.${imageExt}`;
+
+						// Save file
+						const imagePath = `.imagecache/${meta['image_name']}`;
+						if (!fs.exists(imagePath)) {
+							fs.writeFile(imagePath, picture['picture'], null, () => {
+							});
+						}
+					}
+
+					file[field] = dbObject[field] = meta[field]
+						? meta[field]
+						: null
+				});
+
+				dbObject.path = file.path;
+				db.insertRow('song', dbObject);
+
+				resolve(file);
+			}, 5, resolve);
 		});
 	});
 };

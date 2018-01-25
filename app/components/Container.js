@@ -4,11 +4,14 @@ import HTML5Backend, { NativeTypes } from 'react-dnd-html5-backend';
 
 import _ from 'lodash/core';
 import fs from 'fs';
+import os from 'os';
 import db from 'sqlite-crud';
+import events from 'events';
+events.EventEmitter.defaultMaxListeners = 20;
 
 import { requireTaskPool } from 'electron-remote';
 import Task from './Task';
-const TaskPool = requireTaskPool(require.resolve('./Task'));
+const TaskPool = requireTaskPool(require.resolve('./Task'), os.cpus().length - 2); // number of cpu - main - renderer
 
 import Target from './Target';
 import FileList from './FileList';
@@ -73,7 +76,7 @@ export default class Container extends Component {
 					files.push(...array);
 				});
 
-				await this.processFiles(files);
+				void this.processFiles(files);
 			}
 		}
 
