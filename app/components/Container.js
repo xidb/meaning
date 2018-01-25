@@ -33,9 +33,26 @@ export default class Container extends Component {
 		await db.connectToDB('app/db.sqlite');
 
 		// await db.run('DELETE FROM song');
-		console.time('db_init');
-		const songs = await db.queryRows('SELECT * FROM song ORDER by albumartist, year, album, discnumber, track');
-		console.timeEnd('db_init');
+
+		console.time('db_init_first');
+		const firstPage = await db.queryRows(
+			'SELECT * FROM song ORDER by albumartist, year, album, discnumber, track LIMIT 100'
+		);
+		console.timeEnd('db_init_first');
+
+		if (firstPage.length > 0) {
+			this.setFiles(firstPage);
+		}
+
+		if (firstPage.length < 100) {
+			return;
+		}
+
+		console.time('db_init_full');
+		const songs = await db.queryRows(
+			'SELECT * FROM song ORDER by albumartist, year, album, discnumber, track LIMIT -1 OFFSET 100'
+		);
+		console.timeEnd('db_init_full');
 
 		if (songs.length > 0) {
 			this.setFiles(songs);
