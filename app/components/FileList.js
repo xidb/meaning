@@ -27,9 +27,9 @@ export default class FileList extends Component {
 	}
 
 	static propTypes = {
-		connectDropTarget: PropTypes.func.isRequired,
-		isOver: PropTypes.bool.isRequired,
-		canDrop: PropTypes.bool.isRequired,
+		connectDropTarget: PropTypes.func,
+		isOver: PropTypes.bool,
+		canDrop: PropTypes.bool,
 		accepts: PropTypes.arrayOf(PropTypes.string).isRequired,
 		onDrop: PropTypes.func,
 		files: PropTypes.arrayOf(PropTypes.object),
@@ -75,25 +75,26 @@ export default class FileList extends Component {
 		const { search } = this.state;
 
 		if (search !== '') {
+			const searchLowerCase = search.toLowerCase();
 			files = files.filter(file => {
 
-				return 	file.album_artist.includes(search)  ||
-						file.date.includes(search)          ||
-						file.album.includes(search)         ||
-						file.disc.includes(search)          ||
-						String(file.track).includes(search) ||
-						file.title.includes(search)
+				return 	String(file.albumartist).toLowerCase().includes(searchLowerCase)    ||
+						String(file.year).includes(searchLowerCase)                         ||
+						String(file.album).toLowerCase().includes(searchLowerCase)          ||
+						String(file.discnumber).includes(searchLowerCase)                   ||
+						String(file.track).includes(searchLowerCase)                        ||
+						String(file.title).toLowerCase().includes(searchLowerCase)
 			})
 		}
 
 		const columns = [
 			{
 				Header: 'Artist',
-				accessor: 'album_artist'
+				accessor: 'albumartist'
 			},
 			{
 				Header: 'Year',
-				accessor: 'date',
+				accessor: 'year',
 				maxWidth: 50
 			},
 			{
@@ -102,7 +103,7 @@ export default class FileList extends Component {
 			},
 			{
 				Header: 'Disc',
-				accessor: 'disc',
+				accessor: 'discnumber',
 				maxWidth: 50
 			},
 			{
@@ -123,6 +124,7 @@ export default class FileList extends Component {
 		return connectDropTarget(
 			<div className="filelist">
 				<input
+					value={search}
 					className="search"
 					placeholder="Search"
 					onChange={e => this.setState({search: e.target.value})}

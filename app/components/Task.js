@@ -3,7 +3,8 @@ import dir from 'node-dir';
 import { File } from 'file-api';
 import db from 'sqlite-crud';
 import Promise from 'bluebird';
-import ffmetadata from 'ffmetadata';
+import taglib from 'taglib2';
+import mime from 'mime';
 
 Array.prototype.chunk = function(groupsize) {
 	let sets = [], chunks, i = 0;
@@ -63,71 +64,81 @@ module.exports.parseDirs = async function(paths) {
 	});
 };
 
-module.exports.getMetadata = async function(files, timeout) {
+module.exports.getMetadata = async function(files) {
 	const metaFields = [
-		'album', 'album_artist', 'artist', 'composer', 'date',
-		'disc', 'genre', 'lyrics', 'title', 'track'
+		'albumartist', 'artist', 'album', 'year', 'discnumber', 'track', 'title', 'lyrics', 'genre', 'image_name'
 	];
 
 	db.connectToDB('app/db.sqlite');
 
 	return Promise.map(files, file => {
 		return new Promise(resolve => {
-			setTimeout(resolve => {
-				ffmetadata.read(file.path, (err, data) => {
-					let dbObject = {};
+			const meta = taglib.readTagsSync(file.path);
 
-					metaFields.map(metaField => {
-						if (metaField === 'album_artist' && typeof data[metaField] === 'undefined') {
-							data[metaField] = data['artist'];
-						}
-						if (metaField === 'disc') {
-							if (typeof data[metaField] === 'undefined') {
-								data[metaField] = '1';
-							} else {
-								data[metaField] = parseInt(data[metaField]);
-							}
-						}
-						if (metaField === 'track') {
-							if (typeof data[metaField] === 'undefined') {
-								data[metaField] = null;
-							} else {
-								data[metaField] = parseInt(data[metaField]);
-							}
-						}
+			// Artist and title tags are required
+			if (!meta['artist'] || !meta['title']) {
+				return resolve({error: `Required artist or title tags not found for ${file.path}`});
+			}
 
-						file[metaField] = dbObject[metaField] = typeof data[metaField] !== 'undefined'
-							? data[metaField]
-							: ''
-					});
+			let dbObject = {};
 
-					dbObject.path = file.path;
+			metaFields.map(field => {
+				if (field === 'albumartist' && !meta[field]) {
+					meta[field] = meta['artist'];
+				}
 
-					db.insertRow('song', dbObject);
+				if (field === 'discnumber') {
+					meta[field] = parseInt(meta[field]);
+				}
 
-					resolve(file);
-				})
-			}, timeout, resolve);
+				if (field === 'image_name' && meta['pictures']) {
+					// Make unique image path for album,
+					// even if it does not have image
+					// to not store it two times
+					// if another file in album has image
+					const album = meta['album']
+						? meta['album']
+						: file.path.split('\\').slice(0, -1).join('\\'); // use dir path if album empty
+
+					const picture = meta['pictures'][0];
+					const maybeExt = mime.extension(picture['mimetype']);
+					const imageExt = maybeExt !== void 0
+						? maybeExt.replace('jpeg', 'jpg')
+						: 'jpg';
+					meta['image_name'] = btoa(encodeURIComponent(meta['albumartist'] + album)) + `.${imageExt}`;
+
+					// Save file
+					const imagePath = `.imagecache/${meta['image_name']}`;
+					if (!fs.exists(imagePath)) {
+						fs.writeFile(imagePath, picture['picture'], null, () => {});
+					}
+				}
+
+				file[field] = dbObject[field] = meta[field]
+					? meta[field]
+					: null
+			});
+
+			dbObject.path = file.path;
+			db.insertRow('song', dbObject);
+
+			resolve(file);
 		});
 	});
+};
 
-	function saveImage(file) {
-		// Make unique image path for album,
-		// even if it does not have image
-		// to not store it two times
-		// if another file has image
-		let artist = file['album_artist'];
+module.exports.updateLyrics = async function(file, lyrics) {
+	db.connectToDB('app/db.sqlite');
 
-		let album = file['album'] === ''
-			? file.path.split('\\').slice(0, -1).join('\\') // dir path
-			: file['album'];
+	taglib.writeTagsSync(file.path, {lyrics: lyrics});
 
-		const imagePath = `.imagecache/${btoa(encodeURIComponent(artist+album))}.jpg`;
-
-		if (!fs.existsSync(imagePath)) {
-			ffmetadata.read(file.path, {coverPath: imagePath}, (err, data) => {});
-		}
-
-		file.imagePath = imagePath;
-	}
+	await db.updateRow(
+		'song',
+		{ lyrics: lyrics },
+		[{
+			column: 'id',
+			comparator: '=',
+			value: file.id
+		}]
+	);
 };
