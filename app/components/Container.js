@@ -11,7 +11,9 @@ events.EventEmitter.defaultMaxListeners = 20;
 
 import { requireTaskPool } from 'electron-remote';
 import Task from './Task';
-const TaskPool = requireTaskPool(require.resolve('./Task'), os.cpus().length - 2); // number of cpu - main - renderer
+// Set number of max processes according to cpu cores, but reserve one for main and for renderer
+const TaskPool = requireTaskPool(require.resolve('./Task'), Math.min(2, os.cpus().length - 2));
+const TaskDb = requireTaskPool(require.resolve('./TaskDb'), 1);
 
 import Target from './Target';
 import FileList from './FileList';
@@ -64,6 +66,8 @@ export default class Container extends Component {
 			return;
 		}
 
+		this.dbInsertCounter = this.state.files.length;
+
 		this.setState({statusSpinner: true});
 
 		let dropped = _.sortBy(monitor.getItem().files, 'path');
@@ -96,42 +100,49 @@ export default class Container extends Component {
 				void this.processFiles(files);
 			}
 		}
-
-		this.setState({statusMessage: '', statusSpinner: false});
 	}
 
 	async processFiles(files) {
 		const audio = this.filterAudio(files);
 		if (audio.length === 0) {
+			setTimeout(this.setState({statusMessage: '', statusSpinner: false}), 5000);
 			return;
 		}
-
 		this.setStatusMessage(audio);
 
 		if (audio.length < 20) {
-			this.setFiles(_.sortBy(await Task.getMetadata(audio), 'path'));
+			this.setFiles(_.sortBy(await Task.getMetadata(audio), 'path'), true);
 		} else {
-			this.setFiles(_.sortBy(await TaskPool.getMetadata(audio), 'path'));
+			this.setFiles(_.sortBy(await TaskPool.getMetadata(audio), 'path'), true);
 		}
 	}
 
 	filterAudio(files) {
+		const fileFormats = [
+			'mp3', 'm4a', 'ogg', 'wma', 'm4b', 'm4p', 'mp4', '3g2',
+			'wav', 'flac', 'ape', 'mpc', 'wv', 'opus', 'tta'
+		];
+
 		return files.filter(file => {
-			const isAudio = file.type.match(/audio\/.*/i);
-			let notExists = true;
+			const formatSupported = fileFormats.includes(file.name.split('.').pop());
+			if (!formatSupported) {
+				return false;
+			}
+
+			let notAlreadyExists = true;
 
 			for (let existingFile of this.state.files) {
 				if (existingFile.path === file.path) {
-					notExists = false;
+					notAlreadyExists = false;
 					break;
 				}
 			}
 
-			return isAudio && notExists;
+			return notAlreadyExists;
 		});
 	}
 
-	setFiles(files) {
+	setFiles(files, toDb = false) {
 		files = files.filter(file => {
 			if (file.error !== void 0) {
 				this.setStatusMessage(file.error);
@@ -143,6 +154,24 @@ export default class Container extends Component {
 		if (files.length > 0) {
 			this.setState({files: [...this.state.files, ...files]});
 		}
+
+		if (toDb === false) {
+			return;
+		}
+
+		files.map(file => {
+			TaskDb.insert(file).then(() => {
+				this.dbInsertCounter++;
+
+				const filesLeft = this.state.files.length - this.dbInsertCounter;
+				const filesMessage = filesLeft !== 0 ? `${filesLeft} files to go` : 'Completed!';
+				this.setStatusMessage(`Updating library... ${filesMessage} | ${file.albumartist} - ${file.album}`);
+
+				if (this.dbInsertCounter === this.state.files.length) {
+					this.setState({statusMessage: '', statusSpinner: false})
+				}
+			});
+		});
 	}
 
 	setStatusMessage(input) {

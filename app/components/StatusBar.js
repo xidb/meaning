@@ -26,10 +26,6 @@ export default class StatusBar extends Component {
 		});
 	}
 
-	shouldComponentUpdate(nextProps) {
-		return nextProps.message !== this.state.message || nextProps.spinner !== this.props.spinner;
-	}
-
 	render() {
 		return(
 			<div className="status-bar">
