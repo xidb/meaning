@@ -1,50 +1,41 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
+import Spinner from './StatusBarSpinner';
+
 export default class StatusBar extends Component {
 	static propTypes = {
-		status: PropTypes.string
+		message: PropTypes.string,
+		spinner: PropTypes.bool
 	};
 
 	constructor(props) {
 		super(props);
-		this.state = {ticks: 0, status: ''};
-	}
-
-	tick() {
-		this.setState(prevState => ({
-			ticks: prevState.ticks + 1,
-			status: ''
-		}));
-	}
-
-	componentDidMount() {
-		this.interval = setInterval(() => this.tick(), 1000);
-	}
-
-	componentWillUnmount() {
-		clearInterval(this.interval);
+		this.state = {message: '', timeout: null};
 	}
 
 	componentWillReceiveProps(nextProps) {
+		if (!nextProps.spinner) {
+			return;
+		}
+
+		clearTimeout(this.state.timeout);
 		this.setState({
-			status: nextProps.status
+			message: nextProps.message,
+			timeout: setTimeout(() => this.setState({message: ''}), 1500),
 		});
 	}
 
+	shouldComponentUpdate(nextProps) {
+		return nextProps.message !== this.state.message || nextProps.spinner !== this.props.spinner;
+	}
+
 	render() {
-		const status = this.state.status;
-		if (status.length > 0) {
-			return(
-				<div className="status-bar">
-					<span className="status-bar__spinner" />
-					<span className="status-bar__status">{this.state.status}</span>
-				</div>
-			);
-		} else {
-			return(
-				<div className="status-bar" />
-			);
-		}
+		return(
+			<div className="status-bar">
+				<Spinner spin={this.props.spinner} />
+				<span className="status-bar__status">{this.state.message}</span>
+			</div>
+		);
 	}
 }

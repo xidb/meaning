@@ -5,9 +5,9 @@ import HTML5Backend, { NativeTypes } from 'react-dnd-html5-backend';
 import _ from 'lodash/core';
 import fs from 'fs';
 import db from 'sqlite-crud';
+
 import { requireTaskPool } from 'electron-remote';
 import Task from './Task';
-
 const TaskPool = requireTaskPool(require.resolve('./Task'));
 
 import Target from './Target';
@@ -22,16 +22,17 @@ export default class Container extends Component {
 
 		this.handleFileDrop = this.handleFileDrop.bind(this);
 
-		this.state = {files: [], status: '', selected: {}};
-		this.fetchFromDb();
+		this.state = {files: [], statusMessage: '', statusSpinner: false, selected: {}};
+		void this.fetchFromDb();
 	}
 
 	async fetchFromDb() {
 		await db.connectToDB('app/db.sqlite');
 
 		// await db.run('DELETE FROM song');
-
-		const songs = await db.queryRows('SELECT * FROM song ORDER by album_artist, date, disc, track');
+		console.time('db_init');
+		const songs = await db.queryRows('SELECT * FROM song ORDER by albumartist, year, album, discnumber, track');
+		console.timeEnd('db_init');
 
 		if (songs.length > 0) {
 			this.setFiles(songs);
@@ -42,6 +43,8 @@ export default class Container extends Component {
 		if (!monitor) {
 			return;
 		}
+
+		this.setState({statusSpinner: true});
 
 		let dropped = _.sortBy(monitor.getItem().files, 'path');
 
@@ -60,7 +63,7 @@ export default class Container extends Component {
 		if (dirs.length > 0) {
 			const paths = _.map(dirs, 'path');
 
-			const subdirsChunked = await TaskPool.getSubdirsChunked(paths, 3);
+			const subdirsChunked = await TaskPool.getSubdirsChunked(paths, 5);
 
 			for (let chunk of subdirsChunked) {
 				const filePathArrays = await TaskPool.parseDirs(chunk);
@@ -70,20 +73,25 @@ export default class Container extends Component {
 					files.push(...array);
 				});
 
-				await this.processFiles(files, subdirsChunked.length);
+				await this.processFiles(files);
 			}
 		}
+
+		this.setState({statusMessage: '', statusSpinner: false});
 	}
 
-	async processFiles(files, timeout) {
-		const filtered = this.filterAudio(files);
+	async processFiles(files) {
+		const audio = this.filterAudio(files);
+		if (audio.length === 0) {
+			return;
+		}
 
-		this.setStatus(filtered);
+		this.setStatusMessage(audio);
 
-		if (filtered.length < 20) {
-			this.setFiles(_.sortBy(await Task.getMetadata(filtered), 'path'));
+		if (audio.length < 20) {
+			this.setFiles(_.sortBy(await Task.getMetadata(audio), 'path'));
 		} else {
-			this.setFiles(_.sortBy(await TaskPool.getMetadata(filtered, timeout), 'path'));
+			this.setFiles(_.sortBy(await TaskPool.getMetadata(audio), 'path'));
 		}
 	}
 
@@ -98,25 +106,39 @@ export default class Container extends Component {
 					break;
 				}
 			}
+
 			return isAudio && notExists;
 		});
 	}
 
 	setFiles(files) {
-		this.setState({files: [...this.state.files, ...files]});
+		files = files.filter(file => {
+			if (file.error !== void 0) {
+				this.setStatusMessage(file.error);
+			}
+
+			return file.error === void 0;
+		});
+
+		if (files.length > 0) {
+			this.setState({files: [...this.state.files, ...files]});
+		}
 	}
 
-	setStatus(input) {
+	setStatusMessage(input) {
 		let inputString = '';
 		if (typeof input === 'object') {
-			for (let file of input) {
-				inputString += `${file.name}; `;
+			const last = Math.min(input.length, 20) - 1;
+			for (let i = 0; i <= last; i++) {
+				inputString += input[i].name;
+				inputString += i !== last
+					? ','
+					: '.';
 			}
 		} else {
 			inputString = input;
 		}
-
-		this.setState({status: inputString});
+		this.setState({statusMessage: inputString, statusSpinner: true});
 	}
 
 	songSelected(file) {
@@ -131,6 +153,7 @@ export default class Container extends Component {
 		let fileList;
 		let lyrics;
 		let containerClass;
+
 		if (files.length === 0) {
 			target = <Target accepts={[FILE]} onDrop={this.handleFileDrop} />;
 			containerClass = 'container container--target';
@@ -149,7 +172,7 @@ export default class Container extends Component {
 			<DragDropContextProvider backend={HTML5Backend}>
 				<div className={containerClass}>
 					{target}{fileList}{lyrics}
-					<StatusBar status={this.state.status} />
+					<StatusBar message={this.state.statusMessage} spinner={this.state.statusSpinner} />
 				</div>
 			</DragDropContextProvider>
 		);

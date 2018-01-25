@@ -18,9 +18,9 @@ const boxTarget = {
 
 export default class Target extends Component {
 	static propTypes = {
-		connectDropTarget: PropTypes.func.isRequired,
-		isOver: PropTypes.bool.isRequired,
-		canDrop: PropTypes.bool.isRequired,
+		connectDropTarget: PropTypes.func,
+		isOver: PropTypes.bool,
+		canDrop: PropTypes.bool,
 		accepts: PropTypes.arrayOf(PropTypes.string).isRequired,
 		onDrop: PropTypes.func,
 	};

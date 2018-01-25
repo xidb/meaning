@@ -101,7 +101,7 @@ input, textarea, select, button {
 		grid-template-columns: auto 35%;
 		grid-template-rows: 1fr 27px;
 		grid-template-areas:
-				"filelist lyrics"
+				"filelist lyrics-container"
 				"status-bar status-bar";
 
 		box-sizing: border-box;
@@ -223,6 +223,7 @@ input, textarea, select, button {
 
 .lyrics {
 	@include center-content;
+	@include input;
 
 	grid-area: lyrics;
 
@@ -230,8 +231,6 @@ input, textarea, select, button {
 	margin: 0 15px 87px;
 	padding: 15px;
 	text-align: center;
-	border: 1px solid $midYellow;
-	border-radius: 5px;
 }
 
 .status-bar {
@@ -251,11 +250,15 @@ input, textarea, select, button {
 	&__spinner {
 		background: url('spinner.gif') no-repeat;
 		background-size: contain;
+		opacity: 1;
+
+		&--hide {
+			transition: opacity 2s ease-in;
+			opacity: 0;
+		}
 	}
 
 	&__status {
-		@include center-content;
-
 		height: 21px;
 		line-height: 21px;
 		overflow: hidden;
