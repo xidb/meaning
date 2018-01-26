@@ -9,6 +9,7 @@ import db from 'sqlite-crud';
 import events from 'events';
 events.EventEmitter.defaultMaxListeners = 20;
 
+import { ipcRenderer } from 'electron';
 import { requireTaskPool } from 'electron-remote';
 import Task from './Task';
 // Set number of max processes according to cpu cores, but reserve one for main and for renderer
@@ -27,7 +28,14 @@ export default class Container extends Component {
 
 		this.handleFileDrop = this.handleFileDrop.bind(this);
 
-		this.state = {files: [], selected: {}, statusMessage: '', statusSpinner: false, render: false};
+		this.state = {
+			files: [],
+			selected: {},
+			statusMessage: '',
+			statusSpinner: false,
+			render: false
+		};
+
 		void this.fetchFromDb();
 	}
 
@@ -68,7 +76,14 @@ export default class Container extends Component {
 			return;
 		}
 
-		this.dbInsertCounter = this.state.files.length;
+		if (this.updatingDb) {
+			this.setStatusMessage('Currently in progress, try later');
+			return;
+		}
+
+		this.dbInsertCounter = 0;
+		this.initFilesLength = this.state.files.length;
+		this.updateMode = false;
 
 		this.setState({statusSpinner: true});
 
@@ -89,6 +104,7 @@ export default class Container extends Component {
 		if (dirs.length > 0) {
 			const paths = _.map(dirs, 'path');
 
+			this.fileCount = await TaskPool.fileCount(paths);
 			const subdirsChunked = await TaskPool.getSubdirsChunked(paths, 5);
 
 			for (let chunk of subdirsChunked) {
@@ -110,6 +126,10 @@ export default class Container extends Component {
 			this.setState({statusSpinner: false});
 			return;
 		}
+		const filteredFileCount = files.length - audio.length;
+		if (filteredFileCount > 1) {
+			this.updateMode = true;
+		}
 		this.setStatusMessage(audio);
 
 		if (audio.length < 20) {
@@ -120,17 +140,7 @@ export default class Container extends Component {
 	}
 
 	filterAudio(files) {
-		const fileFormats = [
-			'mp3', 'm4a', 'ogg', 'wma', 'm4b', 'm4p', 'mp4', '3g2',
-			'wav', 'flac', 'ape', 'mpc', 'wv', 'opus', 'tta'
-		];
-
 		return files.filter(file => {
-			const formatSupported = fileFormats.includes(file.name.split('.').pop());
-			if (!formatSupported) {
-				return false;
-			}
-
 			let exists = false;
 
 			for (let existingFile of this.state.files) {
@@ -162,20 +172,37 @@ export default class Container extends Component {
 		}
 
 		files.map(file => {
-			TaskDb.insert(file).then(() => {
-				this.dbInsertCounter++;
-
-				const filesLeft = this.state.files.length - this.dbInsertCounter;
-				if (filesLeft % 10 === 0) {
-					const filesMessage = filesLeft !== 0 ? `${filesLeft} files to go` : 'Completed!';
-					this.setStatusMessage(`Updating library... ${filesMessage} | ${file.albumartist} - ${file.album}`);
-				}
-
-				if (this.dbInsertCounter === this.state.files.length) {
-					this.setState({statusSpinner: false})
-				}
-			});
+			TaskDb.insert(file).then(() => { this.createStatusMessage(file) });
 		});
+	}
+
+	createStatusMessage(file) {
+		this.dbInsertCounter++;
+		this.updatingDb = true;
+
+		const insertCounter = this.updateMode
+			? this.initFilesLength + this.dbInsertCounter
+			: this.dbInsertCounter;
+
+		const finishCounter = this.updateMode
+			? this.state.files.length
+			: this.fileCount;
+
+		setTimeout(ipcRenderer.send('progress', insertCounter / this.fileCount), 100);
+
+		const filesLeft = this.fileCount - insertCounter;
+		if (filesLeft % 20 === 0) {
+			const remainingMessage = filesLeft !== 0 ? `${filesLeft} files remaining` : 'Completed!';
+			let fileMetadata = `${file.albumartist} - `;
+			fileMetadata += file.album ? file.album : file.title;
+			this.setStatusMessage(`Updating library... ${remainingMessage} | ${fileMetadata}`);
+		}
+
+		if (insertCounter === this.state.files.length) {
+			ipcRenderer.send('progress', 0);
+			this.setState({statusSpinner: false});
+			this.updatingDb = false;
+		}
 	}
 
 	setStatusMessage(input) {
@@ -184,9 +211,7 @@ export default class Container extends Component {
 			const last = Math.min(input.length, 20) - 1;
 			for (let i = 0; i <= last; i++) {
 				inputString += input[i].name;
-				inputString += i !== last
-					? ','
-					: '.';
+				inputString += i !== last ? ', ' : '.';
 			}
 		} else {
 			inputString = input;
@@ -194,7 +219,7 @@ export default class Container extends Component {
 		this.setState({statusMessage: inputString, statusSpinner: true});
 	}
 
-	clearMessage() {
+	clearStatusMessage() {
 		this.setStatusMessage('');
 	}
 
@@ -240,7 +265,7 @@ export default class Container extends Component {
 					<StatusBar
 						message={this.state.statusMessage}
 						spinner={this.state.statusSpinner}
-						clearMessage={this.clearMessage.bind(this)} />
+						clearStatusMessage={this.clearStatusMessage.bind(this)} />
 				</div>
 			</DragDropContextProvider>
 		);

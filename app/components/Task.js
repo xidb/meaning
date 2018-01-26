@@ -2,21 +2,20 @@ import fs from 'fs';
 import dir from 'node-dir';
 import { File } from 'file-api';
 import db from 'sqlite-crud';
+import _ from 'lodash';
 import Promise from 'bluebird';
 import taglib from 'taglib2';
 import mime from 'mime';
 
-Array.prototype.chunk = function(groupsize) {
-	let sets = [], chunks, i = 0;
-	chunks = this.length / groupsize;
+const fileFormats = [
+	'mp3', 'm4a', 'ogg', 'wma', 'm4b', 'm4p', 'mp4', '3g2',
+	'wav', 'flac', 'ape', 'mpc', 'wv', 'opus', 'tta'
+];
 
-	while (i < chunks) {
-		sets[i] = this.splice(0, groupsize);
-		i++;
-	}
-
-	return sets;
-};
+const metaFields = [
+	'albumartist', 'artist', 'album', 'year', 'discnumber',
+	'track', 'title', 'lyrics', 'genre', 'image_name'
+];
 
 module.exports.getSubdirsChunked = async function(paths, chunks) {
 	let subdirsArrays = await Promise.map(paths, path => {
@@ -41,7 +40,28 @@ module.exports.getSubdirsChunked = async function(paths, chunks) {
 		merged.push(...subdirs);
 	});
 
-	return merged.chunk(chunks);
+	return _.chunk(merged, chunks);
+};
+
+module.exports.fileCount = async function(paths) {
+	return _.sum(
+		await Promise.map(paths, path => {
+			return new Promise(resolve => {
+				dir.files(path, (err, filePaths) => {
+					if (err) {
+						throw err;
+					}
+
+					resolve(
+						filePaths.filter(filePath => {
+							const ext = filePath.toLowerCase().split('.').pop();
+							return fileFormats.includes(ext);
+						}).length
+					);
+				});
+			});
+		})
+	);
 };
 
 module.exports.parseDirs = async function(paths) {
@@ -55,7 +75,9 @@ module.exports.parseDirs = async function(paths) {
 				let files = [];
 
 				filePaths.map(filePath => {
-					files.push(new File(filePath))
+					if (fileFormats.includes(filePath.toLowerCase().split('.').pop())) {
+						files.push(new File(filePath))
+					}
 				});
 
 				resolve(files);
@@ -65,11 +87,6 @@ module.exports.parseDirs = async function(paths) {
 };
 
 module.exports.getMetadata = async function(files) {
-	const metaFields = [
-		'albumartist', 'artist', 'album', 'year', 'discnumber',
-		'track', 'title', 'lyrics', 'genre', 'image_name'
-	];
-
 	return Promise.map(files, file => {
 		return new Promise(resolve => {
 			const meta = taglib.readTagsSync(file.path);

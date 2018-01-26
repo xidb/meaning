@@ -37,7 +37,7 @@ export default class StatusBar extends Component {
 			message: nextProps.message,
 			clearTick: this.state.ticks + 10
 		});
-		this.props.clearMessage();
+		this.props.clearStatusMessage();
 	}
 
 	render() {

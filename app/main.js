@@ -1,7 +1,7 @@
 'use strict';
 
 // Import parts of electron to use
-const {app, BrowserWindow, shell, Menu, MenuItem} = require('electron');
+const {app, BrowserWindow, ipcMain, shell, Menu, MenuItem} = require('electron');
 const windowStateKeeper = require('electron-window-state');
 const url = require('url');
 const path = require('path');
@@ -123,3 +123,6 @@ app.on('activate', () => {
 	}
 });
 
+ipcMain.on('progress', (event, arg) => {
+	mainWindow.setProgressBar(arg);
+});
