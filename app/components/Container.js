@@ -105,7 +105,7 @@ export default class Container extends Component {
 	async processFiles(files) {
 		const audio = this.filterAudio(files);
 		if (audio.length === 0) {
-			setTimeout(this.setState({statusMessage: '', statusSpinner: false}), 5000);
+			this.setState({statusSpinner: false});
 			return;
 		}
 		this.setStatusMessage(audio);
@@ -129,16 +129,16 @@ export default class Container extends Component {
 				return false;
 			}
 
-			let notAlreadyExists = true;
+			let exists = false;
 
 			for (let existingFile of this.state.files) {
 				if (existingFile.path === file.path) {
-					notAlreadyExists = false;
+					exists = true;
 					break;
 				}
 			}
 
-			return notAlreadyExists;
+			return !exists;
 		});
 	}
 
@@ -164,11 +164,13 @@ export default class Container extends Component {
 				this.dbInsertCounter++;
 
 				const filesLeft = this.state.files.length - this.dbInsertCounter;
-				const filesMessage = filesLeft !== 0 ? `${filesLeft} files to go` : 'Completed!';
-				this.setStatusMessage(`Updating library... ${filesMessage} | ${file.albumartist} - ${file.album}`);
+				if (filesLeft % 10 === 0) {
+					const filesMessage = filesLeft !== 0 ? `${filesLeft} files to go` : 'Completed!';
+					this.setStatusMessage(`Updating library... ${filesMessage} | ${file.albumartist} - ${file.album}`);
+				}
 
 				if (this.dbInsertCounter === this.state.files.length) {
-					this.setState({statusMessage: '', statusSpinner: false})
+					this.setState({statusSpinner: false})
 				}
 			});
 		});
@@ -190,8 +192,16 @@ export default class Container extends Component {
 		this.setState({statusMessage: inputString, statusSpinner: true});
 	}
 
+	clearMessage() {
+		this.setStatusMessage('');
+	}
+
 	songSelected(file) {
 		this.setState({selected: file});
+	}
+
+	updateLyrics(file, lyrics) {
+		Task.updateLyrics(file, lyrics);
 	}
 
 	render() {
@@ -213,7 +223,7 @@ export default class Container extends Component {
 				files={files}
 				songSelected={this.songSelected.bind(this)}
 			/>;
-			lyrics = <Lyrics file={this.state.selected} />;
+			lyrics = <Lyrics file={this.state.selected} updateLyrics={this.updateLyrics.bind(this)} />;
 			containerClass = 'container container--filelist';
 		}
 
@@ -221,7 +231,10 @@ export default class Container extends Component {
 			<DragDropContextProvider backend={HTML5Backend}>
 				<div className={containerClass}>
 					{target}{fileList}{lyrics}
-					<StatusBar message={this.state.statusMessage} spinner={this.state.statusSpinner} />
+					<StatusBar
+						message={this.state.statusMessage}
+						spinner={this.state.statusSpinner}
+						clearMessage={this.clearMessage.bind(this)} />
 				</div>
 			</DragDropContextProvider>
 		);

@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-import Spinner from './StatusBarSpinner';
-
 export default class StatusBar extends Component {
 	static propTypes = {
 		message: PropTypes.string,
@@ -11,25 +9,45 @@ export default class StatusBar extends Component {
 
 	constructor(props) {
 		super(props);
-		this.state = {message: '', timeout: null};
+		this.state = {ticks: 0, message: '', spinner: false, clearTick: 0};
+	}
+
+	tick() {
+		if (this.state.ticks === this.state.clearTick) {
+			this.setState({message: ''});
+		}
+		this.setState(prevState => ({
+			ticks: prevState.ticks + 1
+		}));
+	}
+
+	componentDidMount() {
+		this.interval = setInterval(() => this.tick(), 100);
+	}
+
+	componentWillUnmount() {
+		clearInterval(this.interval);
 	}
 
 	componentWillReceiveProps(nextProps) {
-		if (!nextProps.spinner) {
+		if (nextProps.message === '') {
 			return;
 		}
-
-		clearTimeout(this.state.timeout);
 		this.setState({
 			message: nextProps.message,
-			timeout: setTimeout(() => this.setState({message: ''}), 1500),
+			clearTick: this.state.ticks + 10
 		});
+		this.props.clearMessage();
 	}
 
 	render() {
+		const spinner = this.props.spinner
+			? <span className="status-bar__spinner" />
+			: <span className="status-bar__spinner status-bar__spinner--hide" />;
+
 		return(
 			<div className="status-bar">
-				<Spinner spin={this.props.spinner} />
+				{spinner}
 				<span className="status-bar__status">{this.state.message}</span>
 			</div>
 		);
