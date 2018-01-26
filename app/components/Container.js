@@ -27,7 +27,7 @@ export default class Container extends Component {
 
 		this.handleFileDrop = this.handleFileDrop.bind(this);
 
-		this.state = {files: [], statusMessage: '', statusSpinner: false, selected: {}};
+		this.state = {files: [], selected: {}, statusMessage: '', statusSpinner: false, render: false};
 		void this.fetchFromDb();
 	}
 
@@ -45,6 +45,8 @@ export default class Container extends Component {
 		if (firstPage.length > 0) {
 			this.setFiles(firstPage);
 		}
+
+		this.setState({render: true});
 
 		if (firstPage.length < 100) {
 			return;
@@ -205,6 +207,10 @@ export default class Container extends Component {
 	}
 
 	render() {
+		if (this.state.render === false) {
+			return null;
+		}
+
 		const {FILE} = NativeTypes;
 		const {files} = this.state;
 
