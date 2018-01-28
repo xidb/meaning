@@ -81,7 +81,7 @@ export default class Container extends Component {
 			return;
 		}
 
-		this.dbInsertCounter = 0;
+		this.dbInsertCounter = this.fileCount = 0;
 		this.initFilesLength = this.state.files.length;
 		this.updateMode = false;
 
@@ -94,6 +94,7 @@ export default class Container extends Component {
 		});
 
 		if (files.length > 0) {
+			this.fileCount += files.length;
 			await this.processFiles(files);
 		}
 
@@ -104,7 +105,7 @@ export default class Container extends Component {
 		if (dirs.length > 0) {
 			const paths = _.map(dirs, 'path');
 
-			this.fileCount = await TaskPool.fileCount(paths);
+			this.fileCount += await TaskPool.fileCount(paths);
 			const subdirsChunked = await TaskPool.getSubdirsChunked(paths, 5);
 
 			for (let chunk of subdirsChunked) {
@@ -198,11 +199,13 @@ export default class Container extends Component {
 			this.setStatusMessage(`Updating library... ${remainingMessage} | ${fileMetadata}`);
 		}
 
-		if (insertCounter === this.state.files.length) {
-			ipcRenderer.send('progress', 0);
-			this.setState({statusSpinner: false});
-			this.updatingDb = false;
-		}
+		setTimeout(() => {
+			if (insertCounter === finishCounter) {
+				ipcRenderer.send('progress', 0);
+				this.setState({statusSpinner: false});
+				this.updatingDb = false;
+			}
+		}, 1000);
 	}
 
 	setStatusMessage(input) {
