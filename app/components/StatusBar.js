@@ -3,8 +3,7 @@ import PropTypes from 'prop-types';
 
 export default class StatusBar extends Component {
 	static propTypes = {
-		message: PropTypes.string,
-		spinner: PropTypes.bool
+		message: PropTypes.string
 	};
 
 	constructor(props) {
@@ -41,14 +40,16 @@ export default class StatusBar extends Component {
 	}
 
 	render() {
-		const spinner = this.props.spinner
+		const {message} = this.state;
+
+		const spinner = message
 			? <span className="status-bar__spinner" />
 			: <span className="status-bar__spinner status-bar__spinner--hide" />;
 
 		return(
 			<div className="status-bar">
 				{spinner}
-				<span className="status-bar__status">{this.state.message}</span>
+				<span className="status-bar__status">{message}</span>
 			</div>
 		);
 	}

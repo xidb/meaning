@@ -32,7 +32,6 @@ export default class Container extends Component {
 			files: [],
 			selected: {},
 			statusMessage: '',
-			statusSpinner: false,
 			render: false
 		};
 
@@ -85,8 +84,6 @@ export default class Container extends Component {
 		this.initFilesLength = this.state.files.length;
 		this.updateMode = false;
 
-		this.setState({statusSpinner: true});
-
 		let dropped = _.sortBy(monitor.getItem().files, 'path');
 
 		const files = dropped.filter(item => {
@@ -124,7 +121,6 @@ export default class Container extends Component {
 	async processFiles(files) {
 		const audio = this.filterAudio(files);
 		if (audio.length === 0) {
-			this.setState({statusSpinner: false});
 			return;
 		}
 		const filteredFileCount = files.length - audio.length;
@@ -191,18 +187,15 @@ export default class Container extends Component {
 
 		setTimeout(ipcRenderer.send('progress', insertCounter / finishCounter), 100);
 
-		const filesLeft = this.fileCount - insertCounter;
-		if (filesLeft % 20 === 0) {
-			const remainingMessage = filesLeft !== 0 ? `${filesLeft} files remaining` : 'Completed!';
+		if (insertCounter % 20 === 0) {
 			let fileMetadata = `${file.albumartist} - `;
 			fileMetadata += file.album ? file.album : file.title;
-			this.setStatusMessage(`Updating library... ${remainingMessage} | ${fileMetadata}`);
+			this.setStatusMessage(`Updating library... ${fileMetadata}`);
 		}
 
 		setTimeout(() => {
 			if (insertCounter === finishCounter) {
 				ipcRenderer.send('progress', 0);
-				this.setState({statusSpinner: false});
 				this.updatingDb = false;
 			}
 		}, 1000);
@@ -219,7 +212,7 @@ export default class Container extends Component {
 		} else {
 			inputString = input;
 		}
-		this.setState({statusMessage: inputString, statusSpinner: true});
+		this.setState({statusMessage: inputString});
 	}
 
 	clearStatusMessage() {
@@ -269,7 +262,6 @@ export default class Container extends Component {
 					{lyrics}
 					<StatusBar
 						message={this.state.statusMessage}
-						spinner={this.state.statusSpinner}
 						clearStatusMessage={this.clearStatusMessage.bind(this)} />
 				</div>
 			</DragDropContextProvider>
