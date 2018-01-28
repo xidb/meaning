@@ -188,7 +188,7 @@ export default class Container extends Component {
 			? this.state.files.length
 			: this.fileCount;
 
-		setTimeout(ipcRenderer.send('progress', insertCounter / this.fileCount), 100);
+		setTimeout(ipcRenderer.send('progress', insertCounter / finishCounter), 100);
 
 		const filesLeft = this.fileCount - insertCounter;
 		if (filesLeft % 20 === 0) {
@@ -261,7 +261,9 @@ export default class Container extends Component {
 		return(
 			<DragDropContextProvider backend={HTML5Backend}>
 				<div className={containerClass}>
-					{target}{fileList}{lyrics}
+					{target}
+					{fileList}
+					{lyrics}
 					<StatusBar
 						message={this.state.statusMessage}
 						spinner={this.state.statusSpinner}

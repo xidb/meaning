@@ -15,6 +15,15 @@
 	src: url(Raleway-Light.ttf);
 }
 
+@keyframes fadein {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
 // Main vars
 $grey: #4a4a4a;
 $darkGrey: #313131;
@@ -47,10 +56,35 @@ $lightYellow: rgba(253, 255, 63, 0.2);
 	border-radius: $radius;
 }
 
-@mixin input() {
-	background: $darkGrey;
+@mixin frame() {
 	border: 1px solid $midYellow;
 	border-radius: 5px;
+}
+
+@mixin scrollbar() {
+	&::-webkit-scrollbar-track {
+		-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+		border-radius: 5px;
+		background-color: transparent;
+	}
+
+	&::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		border-radius: 5px;
+		-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+		background-color: $midYellow;
+	}
+}
+
+@mixin input() {
+	@include scrollbar;
+	@include frame;
+
+	background: $darkGrey;
+
 	color: $yellow;
 	font-weight: 100;
 	font-size: 16px;
@@ -64,8 +98,26 @@ $lightYellow: rgba(253, 255, 63, 0.2);
 	}
 }
 
+@mixin button() {
+	min-width: 85px;
+	height: 50px;
+	background: $yellow;
+	color: $grey;
+	font-weight: 300;
+	cursor: pointer;
+
+	&:not([disabled]):hover {
+		background: $yellow;
+		color: $grey;
+		font-weight: 600;
+	}
+}
+
 body {
 	margin: 0;
+	-webkit-user-select: none;
+	-webkit-app-region: drag;
+	animation: fadein 0.5s;
 }
 
 input, textarea, select, button {
@@ -88,21 +140,22 @@ input, textarea, select, button {
 	overflow: hidden;
 
 	&--target {
-		grid-template-columns: auto;
+		grid-template-columns: 100%;
 		grid-template-rows: 1fr min-content 1fr 27px;
 		grid-template-areas:
-				"."
-				"target"
-				"."
-				"status-bar";
+			"."
+			"target"
+			"."
+			"status-bar";
 	}
 
 	&--filelist {
 		grid-template-columns: auto 35%;
-		grid-template-rows: 1fr 27px;
+		grid-template-rows: auto 27px;
 		grid-template-areas:
-				"filelist lyrics-container"
-				"status-bar status-bar";
+			"filelist lyrics"
+			"status-bar status-bar";
+		grid-column-gap: 15px;
 
 		box-sizing: border-box;
 		padding-top: 15px;
@@ -127,28 +180,59 @@ input, textarea, select, button {
 }
 
 .filelist {
+	$filelist: &;
+
+	display: grid;
 	grid-area: filelist;
 
+	grid-template-columns: 100%;
+	grid-template-rows: 34px auto;
+	grid-template-areas:
+		"filelist__buttons"
+		"ReactTable";
+	grid-row-gap: 15px;
+
 	padding-left: 15px;
+	padding-bottom: 15px;
 	overflow-y: hidden;
 
-	& .search {
-		@include input;
+	&__buttons {
+		grid-area: filelist__buttons;
 
-		width: 300px;
-		margin-bottom: 10px;
-		padding: 7px;
+		#{$filelist}__search {
+			@include input;
+
+			width: 50%;
+			max-width: 300px;
+			padding: 7px;
+		}
 	}
+
 }
 
 // React Table
 .ReactTable {
+	display: grid;
+	grid-area: ReactTable;
+	grid-template-areas:
+		"rt-table"
+		"-pagination";
+	grid-template-columns: auto;
+	grid-template-rows: auto 50px;
+	grid-row-gap: 15px;
+
 	& .rt-table {
-		border: 1px solid $midYellow;
-		border-radius: 5px;
+		@include scrollbar;
+		@include frame;
+
+		width: auto;
+		//noinspection CssInvalidPropertyValue
+		overflow: overlay;
 	}
 
 	& .rt-thead {
+		grid-area: rt-table;
+
 		&.-header {
 			box-shadow: 0 2px 15px 0 $midYellow;
 		}
@@ -175,7 +259,7 @@ input, textarea, select, button {
 
 		& .rt-td {
 			border-right: 1px solid $midYellow;
-		}		
+		}
 	}
 
 	&.-striped .rt-tr.-odd {
@@ -187,28 +271,16 @@ input, textarea, select, button {
 		cursor: pointer;
 	}
 
-	& .pagination-bottom {
-		height: 85px;
-		line-height: 50px;
-	}
-
 	& .-pagination {
-		padding: 10px 0 0 0;
+		grid-area: -pagination;
+
+		padding: 0;
+		border: none;
 		box-shadow: none;
 
 		& .-btn {
 			@include input;
-
-			height: 50px;
-			background: $yellow;
-			color: $grey;
-			font-weight: 300;
-
-			&:not([disabled]):hover {
-				background: $yellow;
-				color: $grey;
-				font-weight: 600;
-			}
+			@include button;
 		}
 
 		& .-pageJump input {
@@ -222,15 +294,81 @@ input, textarea, select, button {
 }
 
 .lyrics {
-	@include center-content;
-	@include input;
+	$lyrics: &;
 
+	display: grid;
 	grid-area: lyrics;
 
-	overflow-y: auto;
-	margin: 0 15px 87px;
-	padding: 15px;
+	grid-template-columns: 100%;
+	grid-template-rows: 34px auto;
+	grid-template-areas:
+		"lyrics__buttons"
+		"lyrics__text-container";
+	grid-row-gap: 15px;
+
+	padding-right: 15px;
+	padding-bottom: 15px;
 	text-align: center;
+
+	#{$lyrics}__buttons {
+
+	}
+
+	&__text-container {
+
+		display: grid;
+		grid-area: lyrics__text-container;
+		grid-template-columns: 100%;
+		grid-template-rows: 250px auto 50px;
+		grid-template-areas:
+			"lyrics__info"
+			"lyrics__text"
+			"lyrics__buttons--bottom";
+
+		margin: 0;
+
+		#{$lyrics}__info {
+			@include frame;
+
+			grid-area: lyrics__info;
+
+			border-bottom: none;
+			border-bottom-left-radius: 0;
+			border-bottom-right-radius: 0;
+
+			#{$lyrics}__image {
+
+			}
+
+			#{$lyrics}__services {
+
+			}
+		}
+
+		#{$lyrics}__text {
+			@include center-content;
+			@include input;
+
+			grid-area: lyrics__text;
+
+			margin-bottom: 15px;
+			padding: 15px;
+			background-color: transparent;
+			border-top: none;
+			border-top-left-radius: 0;
+			border-top-right-radius: 0;
+			overflow-y: auto;
+		}
+
+		#{$lyrics}__buttons--bottom {
+			grid-area: lyrics__buttons--bottom;
+
+			* {
+				@include input;
+				@include button;
+			}
+		}
+	}
 }
 
 .status-bar {
@@ -238,8 +376,8 @@ input, textarea, select, button {
 
 	display: grid;
 	grid-template-columns: 21px auto;
-	grid-template-rows: auto;
-	grid-gap: 12px;
+	grid-template-rows: 100%;
+	grid-column-gap: 12px;
 
 	padding: 3px 12px;
 	box-shadow: inset 0 1px 0 #f5f4f5;

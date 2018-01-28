@@ -114,21 +114,19 @@ export default class FileList extends Component {
 			{
 				Header: 'Title',
 				accessor: 'title'
-			},
-			{
-				Header: 'Lyrics',
-				accessor: 'lyrics'
-			},
+			}
 		];
 
 		return connectDropTarget(
 			<div className="filelist">
-				<input
-					value={search}
-					className="search"
-					placeholder="Search"
-					onChange={e => this.setState({search: e.target.value})}
-				/>
+				<div className="filelist__buttons">
+					<input
+						value={search}
+						className="filelist__search"
+						placeholder="Search"
+						onChange={e => this.setState({search: e.target.value})}
+					/>
+				</div>
 				<ReactTable
 					getTdProps={(state, rowInfo, column, instance) => {
 						return {
