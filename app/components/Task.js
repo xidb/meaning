@@ -105,7 +105,7 @@ module.exports.getMetadata = async function(files) {
 					meta[field] = parseInt(meta[field]);
 				}
 
-				if (field === 'image_name' && meta['pictures']) {
+				if (field === 'image_name') {
 					// Make unique image path for album,
 					// even if it does not have image
 					// to not store it two times
@@ -114,18 +114,22 @@ module.exports.getMetadata = async function(files) {
 						? meta['album']
 						: file.path.split('\\').slice(0, -1).join('\\'); // use dir path if album empty
 
-					const picture = meta['pictures'][0];
-					const maybeExt = mime.extension(picture['mimetype']);
-					const imageExt = maybeExt !== void 0
-						? maybeExt.replace('jpeg', 'jpg')
-						: 'jpg';
-					meta['image_name'] = btoa(encodeURIComponent(meta['albumartist'] + album)) + `.${imageExt}`;
+					meta['image_name'] = btoa(encodeURIComponent(meta['albumartist'] + album));
 
-					// Save file
-					const imagePath = `.imagecache/${meta['image_name']}`;
-					if (!fs.exists(imagePath)) {
-						fs.writeFile(imagePath, picture['picture'], null, () => {
-						});
+					if (meta['pictures']) {
+						const picture = meta['pictures'][0];
+						const maybeExt = mime.extension(picture['mimetype']);
+						const imageExt = maybeExt !== void 0
+							? maybeExt.replace('jpeg', 'jpg')
+							: 'jpg';
+
+						// Save file
+						const imagePath = `.imagecache/${meta['image_name']}.${imageExt}`;
+
+						if (!fs.existsSync(imagePath)) {
+							fs.writeFileSync(imagePath, picture['picture'], null, () => {
+							});
+						}
 					}
 				}
 
