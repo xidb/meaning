@@ -248,6 +248,7 @@ export default class Container extends Component {
 
 	static updateLyrics(file, lyrics) {
 		Task.updateLyrics(file, lyrics);
+		_.find(this.state.files, {id: file.id}).lyrics = lyrics;
 	}
 
 	render() {
