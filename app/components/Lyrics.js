@@ -42,10 +42,6 @@ export default class Lyrics extends Component {
 		event.preventDefault();
 	}
 
-	shouldComponentUpdate(nextProps) {
-		return (nextProps.file.lyrics !== this.state.lyrics || nextProps.imagePath !== this.state.imagePath);
-	}
-
 	render() {
 		let { lyrics, imagePath } = this.state;
 		const error = typeof lyrics === 'undefined'
