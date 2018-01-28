@@ -6,6 +6,7 @@ import _ from 'lodash/core';
 import fs from 'fs';
 import os from 'os';
 import db from 'sqlite-crud';
+import findFile from 'file-regex';
 import events from 'events';
 events.EventEmitter.defaultMaxListeners = 20;
 
@@ -30,7 +31,7 @@ export default class Container extends Component {
 
 		this.state = {
 			files: [],
-			selected: {},
+			selected: { file: {}, imagePath: 'assets/record.svg'},
 			statusMessage: '',
 			render: false
 		};
@@ -219,11 +220,33 @@ export default class Container extends Component {
 		this.setStatusMessage('');
 	}
 
-	songSelected(file) {
-		this.setState({selected: file});
+	async songSelected(file) {
+		const imagePath = await this.searchImage(file.image_name);
+
+		this.setState({selected: {file: file, imagePath: imagePath}});
 	}
 
-	updateLyrics(file, lyrics) {
+	async searchImage(imageName) {
+		// Try jpg, as most of the cover are in jpg
+		const imagePath = `.imagecache/${imageName}.jpg`;
+
+		if (fs.existsSync(imagePath)) {
+			return `../${imagePath}`;
+		}
+
+		// else try to find image with another extension
+		return await new Promise(resolve => {
+			findFile('.imagecache', `${imageName}.*`, (err, files) => {
+				if (files[0] !== void 0 && files[0]['file'] !== void 0) {
+					resolve(`../.imagecache/${files[0]['file']}`);
+				} else {
+					resolve('assets/record.svg');
+				}
+			});
+		});
+	}
+
+	static updateLyrics(file, lyrics) {
 		Task.updateLyrics(file, lyrics);
 	}
 
@@ -250,7 +273,11 @@ export default class Container extends Component {
 				files={files}
 				songSelected={this.songSelected.bind(this)}
 			/>;
-			lyrics = <Lyrics file={this.state.selected} updateLyrics={this.updateLyrics.bind(this)} />;
+			lyrics = <Lyrics
+				file={this.state.selected.file}
+				imagePath={this.state.selected.imagePath}
+				updateLyrics={Container.updateLyrics.bind(this)}
+			/>;
 			containerClass = 'container container--filelist';
 		}
 

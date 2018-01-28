@@ -5,21 +5,22 @@ export default class Lyrics extends Component {
 	constructor() {
 		super();
 
-		this.state = {lyrics: '', imageName: ''};
+		this.state = {lyrics: '', imagePath: 'assets/record.svg'};
 
 		this.handleChange = this.handleChange.bind(this);
 		this.handleSubmit = this.handleSubmit.bind(this);
 	}
 
 	static propTypes = {
-		file: PropTypes.object
+		file: PropTypes.object,
+		imagePath: PropTypes.string
 	};
 
 	componentWillReceiveProps(nextProps) {
-		if (nextProps.file.lyrics !== this.state.lyrics && nextProps.file.image_name !== this.state.imageName) {
+		if (nextProps.file.lyrics !== this.state.lyrics && nextProps.imagePath !== this.state.imagePath) {
 			this.setState({
 				lyrics: nextProps.file.lyrics,
-				imageName: nextProps.file.image_name,
+				imagePath: nextProps.imagePath,
 			});
 		}
 
@@ -27,8 +28,8 @@ export default class Lyrics extends Component {
 			this.setState({lyrics: nextProps.file.lyrics});
 		}
 
-		if (nextProps.file.image_name !== this.state.imageName) {
-			this.setState({imageName: nextProps.file.image_name});
+		if (nextProps.imagePath !== this.state.imagePath) {
+			this.setState({imagePath: nextProps.imagePath});
 		}
 	}
 
@@ -42,22 +43,17 @@ export default class Lyrics extends Component {
 	}
 
 	shouldComponentUpdate(nextProps) {
-		return (nextProps.file.lyrics !== this.state.lyrics || nextProps.file.image_name !== this.state.imageName);
+		return (nextProps.file.lyrics !== this.state.lyrics || nextProps.imagePath !== this.state.imagePath);
 	}
 
 	render() {
-		let { lyrics, imageName } = this.state;
+		let { lyrics, imagePath } = this.state;
 		const error = typeof lyrics === 'undefined'
 			? 'Select a song...'
 			: false;
 		if (!lyrics) {
 			lyrics = 'Nothing here...';
 		}
-
-		const imagePath = imageName
-			? `../.imagecache/${imageName}`
-			: 'assets/record.svg';
-
 
 		const lyricsTextElement = error
 			? <div className="lyrics__text">{error}</div>
