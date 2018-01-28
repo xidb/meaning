@@ -344,6 +344,7 @@ input, textarea, select, button {
 			#{$lyrics}__image {
 				max-width: 250px;
 				max-height: 250px;
+				background-size: cover;
 			}
 
 			#{$lyrics}__services {

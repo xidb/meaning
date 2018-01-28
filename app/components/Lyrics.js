@@ -65,7 +65,7 @@ export default class Lyrics extends Component {
 				</div>
 				<form className="lyrics__text-container">
 					<div className="lyrics__info">
-						<img className="lyrics__image" src={imagePath} />
+						<div className="lyrics__image" style={{backgroundImage: `url(${imagePath})`}} />
 						<div className="lyrics__services">
 						</div>
 					</div>
