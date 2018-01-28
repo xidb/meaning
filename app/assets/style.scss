@@ -59,6 +59,7 @@ $lightYellow: rgba(253, 255, 63, 0.2);
 @mixin frame() {
 	border: 1px solid $midYellow;
 	border-radius: 5px;
+	border-collapse: collapse;
 }
 
 @mixin scrollbar() {
@@ -332,16 +333,23 @@ input, textarea, select, button {
 
 			grid-area: lyrics__info;
 
-			border-bottom: none;
+			display: grid;
+			grid-template-columns: 250px auto;
+			grid-template-rows: 100%;
+
 			border-bottom-left-radius: 0;
 			border-bottom-right-radius: 0;
+			overflow: hidden;
 
 			#{$lyrics}__image {
-
+				max-width: 250px;
+				max-height: 250px;
 			}
 
 			#{$lyrics}__services {
+				border-left: 1px solid $midYellow;
 
+				width: calc(100% - 250px);
 			}
 		}
 

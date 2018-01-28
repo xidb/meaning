@@ -5,7 +5,7 @@ export default class Lyrics extends Component {
 	constructor() {
 		super();
 
-		this.state = {lyrics: ''};
+		this.state = {lyrics: '', imageName: ''};
 
 		this.handleChange = this.handleChange.bind(this);
 		this.handleSubmit = this.handleSubmit.bind(this);
@@ -16,8 +16,19 @@ export default class Lyrics extends Component {
 	};
 
 	componentWillReceiveProps(nextProps) {
+		if (nextProps.file.lyrics !== this.state.lyrics && nextProps.file.image_name !== this.state.imageName) {
+			this.setState({
+				lyrics: nextProps.file.lyrics,
+				imageName: nextProps.file.image_name,
+			});
+		}
+
 		if (nextProps.file.lyrics !== this.state.lyrics) {
 			this.setState({lyrics: nextProps.file.lyrics});
+		}
+
+		if (nextProps.file.image_name !== this.state.imageName) {
+			this.setState({imageName: nextProps.file.image_name});
 		}
 	}
 
@@ -31,17 +42,22 @@ export default class Lyrics extends Component {
 	}
 
 	shouldComponentUpdate(nextProps) {
-		return !(nextProps.file.lyrics === this.state.lyrics);
+		return (nextProps.file.lyrics !== this.state.lyrics || nextProps.file.image_name !== this.state.imageName);
 	}
 
 	render() {
-		let { lyrics } = this.state;
+		let { lyrics, imageName } = this.state;
 		const error = typeof lyrics === 'undefined'
 			? 'Select a song...'
 			: false;
 		if (!lyrics) {
 			lyrics = 'Nothing here...';
 		}
+
+		const imagePath = imageName
+			? `../.imagecache/${imageName}`
+			: 'assets/record.svg';
+
 
 		const lyricsTextElement = error
 			? <div className="lyrics__text">{error}</div>
@@ -53,8 +69,7 @@ export default class Lyrics extends Component {
 				</div>
 				<form className="lyrics__text-container">
 					<div className="lyrics__info">
-						<div className="lyrics__image">
-						</div>
+						<img className="lyrics__image" src={imagePath} />
 						<div className="lyrics__services">
 						</div>
 					</div>
