@@ -22,8 +22,9 @@ export default class FileList extends Component {
 		super();
 		this.state = {
 			rows: 24,
-			search: ''
-		}
+			search: '',
+			selectedId: 0
+		};
 	}
 
 	static propTypes = {
@@ -84,7 +85,7 @@ export default class FileList extends Component {
 						String(file.discnumber).includes(searchLowerCase)                   ||
 						String(file.track).includes(searchLowerCase)                        ||
 						String(file.title).toLowerCase().includes(searchLowerCase)
-			})
+			});
 		}
 
 		const columns = [
@@ -129,11 +130,25 @@ export default class FileList extends Component {
 					/>
 				</div>
 				<ReactTable
-					getTdProps={(state, rowInfo) => {
+					getTrProps={(state, rowInfo) => {
+						let classes = [];
+						if (rowInfo) {
+							if (rowInfo['original']['lyrics'] !== null) {
+								classes.push('rt-tr--has-lyrics');
+							}
+							if (rowInfo['original']['id'] === this.state.selectedId) {
+								classes.push('rt-tr--selected');
+							}
+						}
+
 						return {
+							className: classes,
 							onClick: () => {
 								if (rowInfo && rowInfo['original']) {
 									void this.props.songSelected(rowInfo['original']);
+									if (rowInfo['original']['id']) {
+										this.setState({selectedId: rowInfo['original']['id']});
+									}
 								}
 							}
 						}

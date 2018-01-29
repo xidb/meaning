@@ -31,6 +31,7 @@ $lightGrey: #d8d8d8;
 $yellow: #fdff3f;
 $midYellow: rgba(253, 255, 63, 0.4);
 $lightYellow: rgba(253, 255, 63, 0.2);
+$green: rgba(102, 146, 37, 0.5);
 
 // Mixins
 @mixin center-content() {
@@ -256,15 +257,39 @@ input, textarea, select, button {
 	& .rt-tbody {
 		& .rt-tr-group {
 			border-bottom: solid 1px $midYellow;
-		}
 
-		& .rt-td {
-			border-right: 1px solid $midYellow;
-		}
-	}
+			& .rt-tr {
+				position: relative;
 
-	&.-striped .rt-tr.-odd {
-		background: $lightYellow;
+				&.-odd {
+					background-color: $lightYellow;
+				}
+
+				&--has-lyrics:after {
+					content: "\1f5c9";
+					position: absolute;
+					right: 0;
+					height: 100%;
+					line-height: 33px;
+					padding: 0 5px;
+					border-left: 1px solid $midYellow;
+					background: transparent;
+				}
+
+				&--selected.-even, &--selected.-odd {
+					background: $midYellow;
+				}
+
+				& .rt-td {
+					border-right: 1px solid $midYellow;
+
+					&:last-of-type {
+						border-right: none;
+						padding-right: 25px;
+					}
+				}
+			}
+		}
 	}
 
 	&.-highlight .rt-tbody .rt-tr:not(.-padRow):hover {
