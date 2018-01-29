@@ -90,7 +90,8 @@ export default class FileList extends Component {
 		const columns = [
 			{
 				Header: 'Artist',
-				accessor: 'albumartist'
+				accessor: 'albumartist',
+				Cell: props => props.value === props['original'].artist ? props.value : `${props.value} / ${props['original'].artist}`
 			},
 			{
 				Header: 'Year',
@@ -128,11 +129,11 @@ export default class FileList extends Component {
 					/>
 				</div>
 				<ReactTable
-					getTdProps={(state, rowInfo, column, instance) => {
+					getTdProps={(state, rowInfo) => {
 						return {
-							onClick: (e, handleOriginal) => {
-								if (rowInfo && rowInfo.original) {
-									this.props.songSelected(rowInfo.original);
+							onClick: () => {
+								if (rowInfo && rowInfo['original']) {
+									void this.props.songSelected(rowInfo['original']);
 								}
 							}
 						}
