@@ -186,6 +186,8 @@ export default class Container extends Component {
 			? this.state.files.length
 			: this.fileCount;
 
+		this.lastInsertTick = this.ticks;
+
 		setTimeout(ipcRenderer.send('progress', insertCounter / finishCounter), 100);
 
 		if (insertCounter % 20 === 0) {
@@ -194,12 +196,10 @@ export default class Container extends Component {
 			this.setStatusMessage(`Updating library... ${fileMetadata}`);
 		}
 
-		setTimeout(() => {
-			if (insertCounter === finishCounter) {
-				ipcRenderer.send('progress', 0);
-				this.updatingDb = false;
-			}
-		}, 1000);
+		if (insertCounter === finishCounter) {
+			ipcRenderer.send('progress', 0);
+			this.updatingDb = false;
+		}
 	}
 
 	setStatusMessage(input) {
@@ -249,6 +249,25 @@ export default class Container extends Component {
 	static updateLyrics(file, lyrics) {
 		Task.updateLyrics(file, lyrics);
 		_.find(this.state.files, {id: file.id}).lyrics = lyrics;
+	}
+
+	tick() {
+		// Check maybe update not doing anything for 3 seconds
+		if (this.updatingDb && (this.ticks - this.lastInsertTick) >= 3) {
+			ipcRenderer.send('progress', 0);
+			this.updatingDb = false;
+		}
+
+		this.ticks++;
+	}
+
+	componentDidMount() {
+		this.ticks = 0;
+		this.interval = setInterval(() => this.tick(), 1000);
+	}
+
+	componentWillUnmount() {
+		clearInterval(this.interval);
 	}
 
 	render() {
