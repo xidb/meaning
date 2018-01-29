@@ -221,12 +221,13 @@ export default class Container extends Component {
 	}
 
 	async songSelected(file) {
-		const imagePath = await this.searchImage(file.image_name);
-
+		const imagePath = await this.searchImage(file);
 		this.setState({selected: {file: file, imagePath: imagePath}});
 	}
 
-	async searchImage(imageName) {
+	async searchImage(file) {
+		const imageName = file.image_name;
+
 		// Try jpg, as most of the cover are in jpg
 		const imagePath = `.imagecache/${imageName}.jpg`;
 
@@ -234,11 +235,28 @@ export default class Container extends Component {
 			return `../${imagePath}`;
 		}
 
-		// else try to find image with another extension
-		return await new Promise(resolve => {
+		// try to find image with another extension
+		const anotherExt = await new Promise(resolve => {
 			findFile('.imagecache', `${imageName}.*`, (err, files) => {
 				if (files[0] !== void 0 && files[0]['file'] !== void 0) {
 					resolve(`../.imagecache/${files[0]['file']}`);
+				} else {
+					resolve(null);
+				}
+			});
+		});
+
+		if (anotherExt !== null) {
+			return anotherExt;
+		}
+
+		// else try to find image in song dir
+		const songDir = file.path.split('\\').slice(0, -1).join('\\').replace('\\', '/');
+
+		return await new Promise(resolve => {
+			findFile(songDir, `.*\.(jpg|png|gif|bmp|tiff)`, (err, files) => {
+				if (files[0] !== void 0 && files[0]['file'] !== void 0) {
+					resolve(`${songDir}/${files[0]['file']}`);
 				} else {
 					resolve('assets/record.svg');
 				}

@@ -17,19 +17,11 @@ export default class Lyrics extends Component {
 	};
 
 	componentWillReceiveProps(nextProps) {
-		if (nextProps.file.lyrics !== this.state.lyrics && nextProps.imagePath !== this.state.imagePath) {
+		if (nextProps.file.lyrics !== this.state.lyrics || nextProps.imagePath !== this.state.imagePath) {
 			this.setState({
 				lyrics: nextProps.file.lyrics,
-				imagePath: nextProps.imagePath,
+				imagePath: nextProps.imagePath
 			});
-		}
-
-		if (nextProps.file.lyrics !== this.state.lyrics) {
-			this.setState({lyrics: nextProps.file.lyrics});
-		}
-
-		if (nextProps.imagePath !== this.state.imagePath) {
-			this.setState({imagePath: nextProps.imagePath});
 		}
 	}
 
@@ -61,7 +53,7 @@ export default class Lyrics extends Component {
 				</div>
 				<form className="lyrics__text-container">
 					<div className="lyrics__info">
-						<div className="lyrics__image" style={{backgroundImage: `url(${imagePath})`}} />
+						<div className="lyrics__image" style={{backgroundImage: `url("${imagePath}")`}} />
 						<div className="lyrics__services">
 						</div>
 					</div>
