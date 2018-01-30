@@ -21,6 +21,7 @@ export default class FileList extends Component {
 	constructor() {
 		super();
 		this.state = {
+			page: 0,
 			rows: 24,
 			search: '',
 			selectedId: 0
@@ -126,10 +127,12 @@ export default class FileList extends Component {
 						value={search}
 						className="filelist__search"
 						placeholder="Search"
-						onChange={e => this.setState({search: e.target.value})}
+						onChange={e => this.setState({search: e.target.value, page: 0})}
 					/>
 				</div>
 				<ReactTable
+					data={files}
+					columns={columns}
 					getTrProps={(state, rowInfo) => {
 						let classes = [];
 						if (rowInfo) {
@@ -153,8 +156,8 @@ export default class FileList extends Component {
 							}
 						}
 					}}
-					data={files}
-					columns={columns}
+					onPageChange={page => this.setState({page: page})}
+					page={this.state.page}
 					showPageSizeOptions={false}
 					pageSize={rows}
 					className="-striped -highlight"
