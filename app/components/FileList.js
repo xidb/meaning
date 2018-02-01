@@ -47,6 +47,11 @@ export default class FileList extends Component {
 		files: PropTypes.arrayOf(PropTypes.object),
 	};
 
+	componentWillMount() {
+		this.updateDimensions();
+		window.addEventListener('resize', this.updateDimensions.bind(this));
+	}
+
 	componentDidMount() {
 		this.win = remote.getCurrentWindow();
 
@@ -125,6 +130,11 @@ export default class FileList extends Component {
 		shortcut.register(this.win, 'Down', down);
 
 		const handleMouseWheel = (event) => {
+			if (event.target.tagName === 'TEXTAREA') {
+				event.stopPropagation();
+				return;
+			}
+
 			if (event.deltaY > 0) {
 				down();
 			} else if (event.deltaY < 0) {
@@ -133,11 +143,6 @@ export default class FileList extends Component {
 		};
 
 		window.addEventListener('wheel', handleMouseWheel, true);
-	}
-
-	componentWillMount() {
-		this.updateDimensions();
-		window.addEventListener('resize', this.updateDimensions.bind(this));
 	}
 
 	componentWillUnmount() {
