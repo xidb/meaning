@@ -6,6 +6,7 @@ import ReactTable from 'react-table';
 import { remote } from 'electron';
 import shortcut from 'electron-localshortcut';
 import _ from 'lodash/core';
+import db from 'sqlite-crud';
 
 const boxTarget = {
 	drop(props, monitor) {
@@ -22,16 +23,18 @@ const boxTarget = {
 }))
 
 export default class FileList extends Component {
-	constructor() {
-		super();
+	constructor(props) {
+		super(props);
+
 		this.state = {
-			page: 0,
+			page: props.settings.page,
+			selectedIndex: props.settings.selectedIndex,
 			rows: 24,
 			search: '',
-			selectedIndex: -1
 		};
+
 		this.lastPage = 9999999;
-		this.pageRows = {};
+		this.sortedData = {};
 		this.canNext = true;
 		this.startRow = 0;
 		this.endRow = 9999999;
@@ -45,9 +48,10 @@ export default class FileList extends Component {
 		accepts: PropTypes.arrayOf(PropTypes.string).isRequired,
 		onDrop: PropTypes.func,
 		files: PropTypes.arrayOf(PropTypes.object),
+		settings: PropTypes.object
 	};
 
-	componentWillMount() {
+	async componentWillMount() {
 		this.updateDimensions();
 		window.addEventListener('resize', this.updateDimensions.bind(this));
 	}
@@ -102,7 +106,7 @@ export default class FileList extends Component {
 				this.setState({page: this.state.page - 1, selectedIndex: toIndex});
 			}
 
-			void this.props.songSelected(_.find(this.pageRows, {_index: toIndex})['_original']);
+			void this.songSelected(toIndex);
 		};
 
 		shortcut.register(this.win, 'Up', up);
@@ -124,7 +128,7 @@ export default class FileList extends Component {
 				this.setState({page: this.state.page + 1, selectedIndex: toIndex});
 			}
 
-			void this.props.songSelected(_.find(this.pageRows, {_index: toIndex})['_original']);
+			void this.songSelected(toIndex);
 		};
 
 		shortcut.register(this.win, 'Down', down);
@@ -148,6 +152,11 @@ export default class FileList extends Component {
 	componentWillUnmount() {
 		window.removeEventListener('resize', this.updateDimensions.bind(this));
 		shortcut.unregisterAll(this.win);
+	}
+
+	async songSelected(selectedIndex) {
+		const settings = JSON.stringify({page: this.state.page, selectedIndex: selectedIndex});
+		void this.props.songSelected(_.find(this.sortedData, {_index: selectedIndex})['_original'], settings);
 	}
 
 	updateDimensions() {
@@ -239,7 +248,9 @@ export default class FileList extends Component {
 					columns={columns}
 					getProps={(props) => {
 						this.lastPage = props.pages - 1;
-						this.pageRows = props.pageRows;
+						if (!_.isEqual(this.sortedData, props.sortedData)) {
+							this.sortedData = props.sortedData;
+						}
 						this.canNext = props.canNext;
 						this.startRow = props.startRow;
 						this.endRow = props.endRow;
@@ -261,7 +272,7 @@ export default class FileList extends Component {
 							className: classes,
 							onClick: () => {
 								if (rowInfo) {
-									void this.props.songSelected(rowInfo['original']);
+									void this.songSelected(rowInfo['index']);
 									if (rowInfo['index']) {
 										this.setState({selectedIndex: rowInfo['index']});
 									}

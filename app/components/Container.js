@@ -28,13 +28,16 @@ export default class Container extends Component {
 		super(props);
 
 		this.handleFileDrop = this.handleFileDrop.bind(this);
+		this.saveSettingsThrottle = _.throttle(this.saveSettings, 500);
 
 		this.state = {
 			files: [],
-			selected: { file: {}, imagePath: 'assets/record.svg'},
+			selected: {},
 			statusMessage: '',
 			render: false
 		};
+
+		this.settings = {};
 
 		void this.fetchFromDb();
 	}
@@ -43,12 +46,15 @@ export default class Container extends Component {
 		await db.connectToDB('app/db.sqlite');
 
 		// await db.run('DELETE FROM songs');
+		const settings = await db.queryRows('SELECT * FROM settings');
+		await this.sendSettingsToComponents(settings);
+		this.setState({selected: this.settings['Container'].selected});
 
-		console.time('db_init_first');
+		console.time('db_fetch_first_100');
 		const firstPage = await db.queryRows(
 			'SELECT * FROM songs ORDER by albumartist, year, album, discnumber, track LIMIT 100'
 		);
-		console.timeEnd('db_init_first');
+		console.timeEnd('db_fetch_first_100');
 
 		if (firstPage.length > 0) {
 			this.setFiles(firstPage);
@@ -60,15 +66,21 @@ export default class Container extends Component {
 			return;
 		}
 
-		console.time('db_init_full');
+		console.time('db_fetch_first_all');
 		const songs = await db.queryRows(
 			'SELECT * FROM songs ORDER by albumartist, year, album, discnumber, track LIMIT -1 OFFSET 100'
 		);
-		console.timeEnd('db_init_full');
+		console.timeEnd('db_fetch_first_all');
 
 		if (songs.length > 0) {
 			this.setFiles(songs);
 		}
+	}
+
+	async sendSettingsToComponents(settings) {
+		settings.map(row => {
+			this.settings[row.component] = JSON.parse(row.settings);
+		});
 	}
 
 	async handleFileDrop(item, monitor) {
@@ -220,12 +232,12 @@ export default class Container extends Component {
 		this.setStatusMessage('');
 	}
 
-	async songSelected(file) {
+	async songSelected(file, fileListSettings) {
 		// check exist
 		if (!fs.existsSync(file.path)) {
 			this.setStatusMessage(`${file.path} not found, removing...`);
 			_.remove(this.state.files, {id: file.id});
-			await db.connectToDB('app/db.sqlite');
+
 			await db.deleteRows(
 				'songs',
 				[{
@@ -239,7 +251,34 @@ export default class Container extends Component {
 		}
 
 		const imagePath = await this.searchImage(file);
+
+		const containerSettings = JSON.stringify({selected: {file: file, imagePath: imagePath}});
+		this.saveSettingsThrottle(containerSettings, fileListSettings);
+
 		this.setState({selected: {file: file, imagePath: imagePath}});
+	}
+
+	saveSettings(containerSettings, fileListSettings) {
+		// save selected
+		db.updateRow(
+			'settings',
+			{ settings: containerSettings },
+			[{
+				column: 'component',
+				comparator: '=',
+				value: 'Container'
+			}]
+		);
+
+		db.updateRow(
+			'settings',
+			{ settings: fileListSettings },
+			[{
+				column: 'component',
+				comparator: '=',
+				value: 'FileList'
+			}]
+		);
 	}
 
 	async searchImage(file) {
@@ -326,6 +365,7 @@ export default class Container extends Component {
 				accepts={[FILE]}
 				onDrop={this.handleFileDrop}
 				files={files}
+				settings={this.settings['FileList']}
 				songSelected={this.songSelected.bind(this)}
 			/>;
 			lyrics = <Lyrics

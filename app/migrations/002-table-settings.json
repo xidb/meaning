@@ -1,0 +1,7 @@
+{
+  "queries": [
+	"CREATE TABLE settings (id INTEGER PRIMARY KEY, component TEXT, settings TEXT);",
+	"INSERT INTO settings (component, settings) VALUES ('FileList', '{\"page\":0,\"selectedIndex\":-1}');",
+	"INSERT INTO settings (component, settings) VALUES ('Container', '{\"selected\":{\"file\":{},\"imagePath\":\"assets/record.svg\"}}');"
+  ]
+}
