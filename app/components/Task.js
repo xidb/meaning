@@ -149,7 +149,7 @@ module.exports.updateLyrics = async function(file, lyrics) {
 	taglib.writeTagsSync(file.path, {lyrics: lyrics});
 
 	await db.updateRow(
-		'song',
+		'songs',
 		{ lyrics: lyrics },
 		[{
 			column: 'id',

@@ -17,5 +17,5 @@ module.exports.insert = async function(file) {
 	}
 
 	await db.connectToDB('app/db.sqlite');
-	await db.insertRow('song', file);
+	await db.insertRow('songs', file);
 };

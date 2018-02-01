@@ -42,11 +42,11 @@ export default class Container extends Component {
 	async fetchFromDb() {
 		await db.connectToDB('app/db.sqlite');
 
-		// await db.run('DELETE FROM song');
+		// await db.run('DELETE FROM songs');
 
 		console.time('db_init_first');
 		const firstPage = await db.queryRows(
-			'SELECT * FROM song ORDER by albumartist, year, album, discnumber, track LIMIT 100'
+			'SELECT * FROM songs ORDER by albumartist, year, album, discnumber, track LIMIT 100'
 		);
 		console.timeEnd('db_init_first');
 
@@ -62,7 +62,7 @@ export default class Container extends Component {
 
 		console.time('db_init_full');
 		const songs = await db.queryRows(
-			'SELECT * FROM song ORDER by albumartist, year, album, discnumber, track LIMIT -1 OFFSET 100'
+			'SELECT * FROM songs ORDER by albumartist, year, album, discnumber, track LIMIT -1 OFFSET 100'
 		);
 		console.timeEnd('db_init_full');
 
@@ -227,7 +227,7 @@ export default class Container extends Component {
 			_.remove(this.state.files, {id: file.id});
 			await db.connectToDB('app/db.sqlite');
 			await db.deleteRows(
-				'song',
+				'songs',
 				[{
 					column: 'id',
 					comparator: '=',
