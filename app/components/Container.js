@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { DragDropContext, DragDropContextProvider } from 'react-dnd';
 import HTML5Backend, { NativeTypes } from 'react-dnd-html5-backend';
 
-import _ from 'lodash/core';
+import _ from 'lodash';
 import fs from 'fs';
 import os from 'os';
 import db from 'sqlite-crud';
@@ -221,6 +221,23 @@ export default class Container extends Component {
 	}
 
 	async songSelected(file) {
+		// check exist
+		if (!fs.existsSync(file.path)) {
+			this.setStatusMessage(`${file.path} not found, removing...`);
+			_.remove(this.state.files, {id: file.id});
+			await db.connectToDB('app/db.sqlite');
+			await db.deleteRows(
+				'song',
+				[{
+					column: 'id',
+					comparator: '=',
+					value: file.id
+				}]
+			);
+			this.setState({files: this.state.files});
+			return;
+		}
+
 		const imagePath = await this.searchImage(file);
 		this.setState({selected: {file: file, imagePath: imagePath}});
 	}
