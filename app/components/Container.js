@@ -52,7 +52,7 @@ export default class Container extends Component {
 
 		console.time('db_fetch_first_100');
 		const firstPage = await db.queryRows(
-			'SELECT * FROM songs ORDER by albumartist, year, album, discnumber, track LIMIT 100'
+			'SELECT * FROM songs ORDER by albumartist, year, album, discnumber, path , track LIMIT 100'
 		);
 		console.timeEnd('db_fetch_first_100');
 
@@ -68,7 +68,7 @@ export default class Container extends Component {
 
 		console.time('db_fetch_first_all');
 		const songs = await db.queryRows(
-			'SELECT * FROM songs ORDER by albumartist, year, album, discnumber, track LIMIT -1 OFFSET 100'
+			'SELECT * FROM songs ORDER by albumartist, year, album, discnumber, path, track LIMIT -1 OFFSET 100'
 		);
 		console.timeEnd('db_fetch_first_all');
 
