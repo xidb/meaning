@@ -84,7 +84,6 @@ export default class FileList extends Component {
 			}
 		};
 		shortcut.register(this.win, 'Left', () => { this.keyThrottle(prevPage) });
-		shortcut.register(this.win, 'PageUp', () => { this.keyThrottle(prevPage) });
 
 		const nextPage = () => {
 			if (this.canNext) {
@@ -92,7 +91,20 @@ export default class FileList extends Component {
 			}
 		};
 		shortcut.register(this.win, 'Right', () => { this.keyThrottle(nextPage) });
-		shortcut.register(this.win, 'PageDown', () => { this.keyThrottle(nextPage) });
+
+		const pageUp = () => {
+			if (this.state.page !== 0) {
+				this.setState({page: Math.max(this.state.page - 10, 0)})
+			}
+		};
+		shortcut.register(this.win, 'PageUp', () => { this.keyThrottle(pageUp) });
+
+		const pageDown = () => {
+			if (this.canNext) {
+				this.setState({page: Math.min(this.state.page + 10, this.lastPage)})
+			}
+		};
+		shortcut.register(this.win, 'PageDown', () => { this.keyThrottle(pageDown) });
 
 		const up = () => {
 			let toIndex = this.state.selectedIndex - 1;
