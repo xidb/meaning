@@ -307,12 +307,12 @@ export default class Container extends Component {
 		}
 
 		// else try to find image in song dir
-		const songDir = file.path.split('\\').slice(0, -1).join('\\').replace('\\', '/');
+		const songDir = file.path.split('\\').slice(0, -1).join('\\').replace(/\\/g, '/');
 
 		return await new Promise(resolve => {
 			findFile(songDir, `.*\.(jpg|png|gif|bmp|tiff)`, (err, files) => {
 				if (files[0] !== void 0 && files[0]['file'] !== void 0) {
-					resolve(`${songDir}/${files[0]['file']}`);
+					resolve(`//${songDir}/${files[0]['file']}`.replace(/\\/g, '/'));
 				} else {
 					resolve('assets/record.svg');
 				}
