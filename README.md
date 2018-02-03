@@ -2,7 +2,7 @@
 
 App, that looks everywhere on the internet to update your media library with song lyrics. 
 
-![alt text](https://i.imgur.com/yVFiEl3.png)
+![alt text](https://i.imgur.com/Qw9ErAa.jpg)
 
 ### Goals
 
