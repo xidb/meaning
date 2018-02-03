@@ -5,8 +5,7 @@ import ReactTable from 'react-table';
 
 import { remote } from 'electron';
 import shortcut from 'electron-localshortcut';
-import _ from 'lodash/core';
-import db from 'sqlite-crud';
+import _ from 'lodash';
 
 const boxTarget = {
 	drop(props, monitor) {
@@ -26,6 +25,8 @@ export default class FileList extends Component {
 	constructor(props) {
 		super(props);
 
+		this.keyThrottle = _.throttle(this.key, 200);
+
 		this.state = {
 			page: props.settings.page,
 			selectedIndex: props.settings.selectedIndex,
@@ -34,7 +35,7 @@ export default class FileList extends Component {
 		};
 
 		this.lastPage = 9999999;
-		this.sortedData = {};
+		this.pageRows = {};
 		this.canNext = true;
 		this.startRow = 0;
 		this.endRow = 9999999;
@@ -56,38 +57,42 @@ export default class FileList extends Component {
 		window.addEventListener('resize', this.updateDimensions.bind(this));
 	}
 
+	key(method) {
+		method.call();
+	}
+
 	componentDidMount() {
 		this.win = remote.getCurrentWindow();
 
-		shortcut.register(this.win, 'Home', () => {
+		const home = () => {
 			if (this.state.page !== 0) {
-				this.setState({page: 0})
+				this.setState({page: this.state.page - 1})
 			}
-		});
+		};
+		shortcut.register(this.win, 'Home', () => { this.keyThrottle(home) });
 
-		shortcut.register(this.win, 'End', () => {
+		const end = () => {
 			if (this.state.page !== this.lastPage) {
 				this.setState({page: this.lastPage})
 			}
-		});
+		};
+		shortcut.register(this.win, 'End', () => { this.keyThrottle(end) });
 
 		const prevPage = () => {
 			if (this.state.page !== 0) {
 				this.setState({page: this.state.page - 1})
 			}
 		};
-
-		shortcut.register(this.win, 'Left', prevPage);
-		shortcut.register(this.win, 'PageUp', prevPage);
+		shortcut.register(this.win, 'Left', () => { this.keyThrottle(prevPage) });
+		shortcut.register(this.win, 'PageUp', () => { this.keyThrottle(prevPage) });
 
 		const nextPage = () => {
 			if (this.canNext) {
 				this.setState({page: this.state.page + 1})
 			}
 		};
-
-		shortcut.register(this.win, 'Right', nextPage);
-		shortcut.register(this.win, 'PageDown', nextPage);
+		shortcut.register(this.win, 'Right', () => { this.keyThrottle(nextPage) });
+		shortcut.register(this.win, 'PageDown', () => { this.keyThrottle(nextPage) });
 
 		const up = () => {
 			let toIndex = this.state.selectedIndex - 1;
@@ -108,8 +113,7 @@ export default class FileList extends Component {
 
 			void this.songSelected(toIndex);
 		};
-
-		shortcut.register(this.win, 'Up', up);
+		shortcut.register(this.win, 'Up', () => { this.keyThrottle(up) });
 
 		const down = () => {
 			let toIndex = this.state.selectedIndex + 1;
@@ -130,8 +134,7 @@ export default class FileList extends Component {
 
 			void this.songSelected(toIndex);
 		};
-
-		shortcut.register(this.win, 'Down', down);
+		shortcut.register(this.win, 'Down', () => { this.keyThrottle(down) });
 
 		const handleMouseWheel = (event) => {
 			if (event.target.tagName === 'TEXTAREA') {
@@ -140,9 +143,9 @@ export default class FileList extends Component {
 			}
 
 			if (event.deltaY > 0) {
-				down();
+				this.keyThrottle(down);
 			} else if (event.deltaY < 0) {
-				up();
+				this.keyThrottle(up);
 			}
 		};
 
@@ -156,7 +159,7 @@ export default class FileList extends Component {
 
 	async songSelected(selectedIndex) {
 		const settings = JSON.stringify({page: this.state.page, selectedIndex: selectedIndex});
-		void this.props.songSelected(_.find(this.sortedData, {_index: selectedIndex})['_original'], settings);
+		void this.props.songSelected(_.find(this.pageRows, {_index: selectedIndex})['_original'], settings);
 	}
 
 	updateDimensions() {
@@ -248,9 +251,7 @@ export default class FileList extends Component {
 					columns={columns}
 					getProps={(props) => {
 						this.lastPage = props.pages - 1;
-						if (!_.isEqual(this.sortedData, props.sortedData)) {
-							this.sortedData = props.sortedData;
-						}
+						this.pageRows = props.pageRows;
 						this.canNext = props.canNext;
 						this.startRow = props.startRow;
 						this.endRow = props.endRow;
