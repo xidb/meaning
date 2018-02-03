@@ -30,8 +30,8 @@ export default class FileList extends Component {
 		this.state = {
 			page: props.settings.page,
 			selectedIndex: props.settings.selectedIndex,
+			search: props.settings.search,
 			rows: 24,
-			search: '',
 		};
 
 		this.lastPage = 9999999;
@@ -170,7 +170,11 @@ export default class FileList extends Component {
 	}
 
 	async songSelected(selectedIndex) {
-		const settings = JSON.stringify({page: this.state.page, selectedIndex: selectedIndex});
+		const settings = JSON.stringify({
+			page: this.state.page,
+			selectedIndex: selectedIndex,
+			search: this.state.search
+		});
 		void this.props.songSelected(_.find(this.pageRows, {_index: selectedIndex})['_original'], settings);
 	}
 
