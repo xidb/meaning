@@ -8,6 +8,7 @@ import os from 'os';
 import db from 'sqlite-crud';
 import findFile from 'file-regex';
 import events from 'events';
+
 events.EventEmitter.defaultMaxListeners = 20;
 
 import { ipcRenderer } from 'electron';
@@ -47,72 +48,72 @@ export default class Container extends Component {
 	async fetchFromDb() {
 		await db.connectToDB('app/db.sqlite');
 
-        // await db.run('DELETE FROM songs');
+		// await db.run('DELETE FROM songs');
 
 		const settings = await db.queryRows('SELECT * FROM settings');
 		await this.sendSettingsToComponents(settings);
 		this.setState({selected: this.settings['Container'].selected});
 
-        console.time('db_fetch_count');
-        this.totalSongs = await db.queryOneRow('SELECT COUNT(id) as count FROM songs')
-            .then((result) => {
-                return result.count;
-            });
-        console.timeEnd('db_fetch_count');
+		console.time('db_fetch_count');
+		this.totalSongs = await db.queryOneRow('SELECT COUNT(id) as count FROM songs')
+			.then((result) => {
+				return result.count;
+			});
+		console.timeEnd('db_fetch_count');
 
-        // reindex and update count if it changed on next app start
-        if (this.totalSongs !== this.settings['Database'].count) {
-            console.time('db_update_index');
-            await db.queryRows('DROP INDEX order_idx');
-            await db.queryRows(
-                'CREATE UNIQUE INDEX order_idx ON songs (albumartist, year, album, discnumber, path, track)'
-            );
-            console.timeEnd('db_update_index');
+		// reindex and update count if it changed on next app start
+		if (this.totalSongs !== this.settings['Database'].count) {
+			console.time('db_update_index');
+			await db.queryRows('DROP INDEX order_idx');
+			await db.queryRows(
+				'CREATE UNIQUE INDEX order_idx ON songs (albumartist, year, album, discnumber, path, track)'
+			);
+			console.timeEnd('db_update_index');
 
-            this.settings['Database'].count = this.totalSongs;
-            this.saveSettings([{component: 'Database', object: this.settings['Database']}])
-        }
+			this.settings['Database'].count = this.totalSongs;
+			this.saveSettings([{component: 'Database', object: this.settings['Database']}])
+		}
 
-        await this.fetchPage();
+		await this.fetchPage();
 
-        this.setState({render: true});
+		this.setState({render: true});
 	}
 
 	async fetchPage(nextPage, pageLength, sorted, filtered) {
-        const page = nextPage !== void 0 ? nextPage : this.settings['FileList'].page || 0;
-        const rows = pageLength !== void 0 ? pageLength : this.settings['FileList'].rows;
+		const page = nextPage !== void 0 ? nextPage : this.settings['FileList'].page || 0;
+		const rows = pageLength !== void 0 ? pageLength : this.settings['FileList'].rows;
 
-        const offset = page * rows;
+		const offset = page * rows;
 
-        const hash = btoa(page + rows + JSON.stringify(sorted) + filtered);
+		const hash = btoa(page + rows + JSON.stringify(sorted) + filtered);
 
-        if (this.cache[hash] === void 0) {
-            console.time('db_fetch_page');
+		if (this.cache[hash] === void 0) {
+			console.time('db_fetch_page');
 
-            // ordering
-            let order = 'ORDER by ';
-            if (sorted !== void 0 && sorted.length !== 0) {
-                let orderColumns = [];
-                for (const column of sorted) {
-                    const direction = column.desc ? 'DESC' : 'ASC';
-                    orderColumns.push(`${column.id} ${direction}`);
-                }
-                order += orderColumns.join(', ');
-            } else {
-                order += 'albumartist, year, album, discnumber, path, track';
-            }
+			// ordering
+			let order = 'ORDER by ';
+			if (sorted !== void 0 && sorted.length !== 0) {
+				let orderColumns = [];
+				for (const column of sorted) {
+					const direction = column.desc ? 'DESC' : 'ASC';
+					orderColumns.push(`${column.id} ${direction}`);
+				}
+				order += orderColumns.join(', ');
+			} else {
+				order += 'albumartist, year, album, discnumber, path, track';
+			}
 
-            // filtering
-            let filter = '';
-            if (filtered) {
-                let filterColumns = [];
-                for (const column of ['albumartist', 'year', 'album', 'discnumber', 'path', 'track']) {
-                    filterColumns.push(`${column} LIKE '%${filtered}%'`);
-                }
-                filter += 'WHERE ' + filterColumns.join(' OR ');
-            }
+			// filtering
+			let filter = '';
+			if (filtered) {
+				let filterColumns = [];
+				for (const column of ['albumartist', 'year', 'album', 'discnumber', 'path', 'track']) {
+					filterColumns.push(`${column} LIKE '%${filtered}%'`);
+				}
+				filter += 'WHERE ' + filterColumns.join(' OR ');
+			}
 
-            const query = `SELECT * FROM songs
+			const query = `SELECT * FROM songs
 	            INNER JOIN (
 	                SELECT id FROM songs
 	                ${filter}
@@ -120,28 +121,28 @@ export default class Container extends Component {
 	                LIMIT ${rows} OFFSET ${offset}
 	            ) AS song_ids USING(id)`;
 
-            const pageRows = await db.queryRows(query);
-            console.timeEnd('db_fetch_page');
+			const pageRows = await db.queryRows(query);
+			console.timeEnd('db_fetch_page');
 
-            let countQuery = this.totalSongs;
-            if (filter) {
-                countQuery = await db.queryOneRow(`SELECT COUNT(id) as count FROM songs ${filter} ${order}`)
-                    .then((result) => {
-                        return result.count;
-                    });
-            }
+			let countQuery = this.totalSongs;
+			if (filter) {
+				countQuery = await db.queryOneRow(`SELECT COUNT(id) as count FROM songs ${filter} ${order}`)
+					.then((result) => {
+						return result.count;
+					});
+			}
 
-            this.settings['FileList'].pages = Math.ceil(countQuery/rows);
+			this.settings['FileList'].pages = Math.ceil(countQuery / rows);
 
-            if (pageRows.length > 0) {
-                this.cache[hash] = pageRows;
-            }
-        }
+			if (pageRows.length > 0) {
+				this.cache[hash] = pageRows;
+			}
+		}
 
-        if (this.cache[hash] !== void 0) {
-            this.setState({files: this.cache[hash]});
-        }
-    }
+		if (this.cache[hash] !== void 0) {
+			this.setState({files: this.cache[hash]});
+		}
+	}
 
 	async sendSettingsToComponents(settings) {
 		settings.map(row => {
@@ -248,7 +249,9 @@ export default class Container extends Component {
 		}
 
 		files.map(file => {
-			TaskDb.insert(file).then(() => { this.createStatusMessage(file) });
+			TaskDb.insert(file).then(() => {
+				this.createStatusMessage(file)
+			});
 		});
 	}
 
@@ -328,17 +331,17 @@ export default class Container extends Component {
 	}
 
 	saveSettings(settingsCollection) {
-        for (const settings of settingsCollection) {
-            void db.updateRow(
-                'settings',
-                { settings: JSON.stringify(settings.object) },
-                [{
-                    column: 'component',
-                    comparator: '=',
-                    value: settings.component
-                }]
-            );
-        }
+		for (const settings of settingsCollection) {
+			void db.updateRow(
+				'settings',
+				{settings: JSON.stringify(settings.object)},
+				[{
+					column: 'component',
+					comparator: '=',
+					value: settings.component
+				}]
+			);
+		}
 	}
 
 	async searchImage(file) {
@@ -418,7 +421,7 @@ export default class Container extends Component {
 		let containerClass;
 
 		if (files.length === 0) {
-			target = <Target accepts={[FILE]} onDrop={this.handleFileDrop} />;
+			target = <Target accepts={[FILE]} onDrop={this.handleFileDrop}/>;
 			containerClass = 'container container--target';
 		} else {
 			fileList = <FileList
@@ -437,7 +440,7 @@ export default class Container extends Component {
 			containerClass = 'container container--filelist';
 		}
 
-		return(
+		return (
 			<DragDropContextProvider backend={HTML5Backend}>
 				<div className={containerClass}>
 					{target}
@@ -445,7 +448,7 @@ export default class Container extends Component {
 					{lyrics}
 					<StatusBar
 						message={this.state.statusMessage}
-						clearStatusMessage={this.clearStatusMessage.bind(this)} />
+						clearStatusMessage={this.clearStatusMessage.bind(this)}/>
 				</div>
 			</DragDropContextProvider>
 		);

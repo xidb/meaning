@@ -174,24 +174,24 @@ export default class FileList extends Component {
 	async fetchPage(state) {
 		console.time('fetch_to_render');
 		const isEvent = state.constructor.name === 'SyntheticEvent';
-        let {page, pageSize, sorted} = isEvent ? this.fetchPageArguments : state;
+		let { page, pageSize, sorted } = isEvent ? this.fetchPageArguments : state;
 
-        if (isEvent) {
-        	this.search = state.target.value;
-        }
+		if (isEvent) {
+			this.search = state.target.value;
+		}
 
-        const sortChanged = JSON.stringify(this.fetchPageArguments.sorted) !== JSON.stringify(sorted);
-        const searchChanged = this.fetchPageArguments.search !== this.search;
+		const sortChanged = JSON.stringify(this.fetchPageArguments.sorted) !== JSON.stringify(sorted);
+		const searchChanged = this.fetchPageArguments.search !== this.search;
 
-        // reset page if sorting or searching started
-        if (sortChanged || searchChanged) {
-        	this.state.page = 0;
-        	page = 0;
-        }
+		// reset page if sorting or searching started
+		if (sortChanged || searchChanged) {
+			this.state.page = 0;
+			page = 0;
+		}
 
-        this.fetchPageArguments = {page, pageSize, sorted, search: this.search};
+		this.fetchPageArguments = {page, pageSize, sorted, search: this.search};
 
-        await this.props.fetchPage(page, pageSize, sorted, this.search);
+		await this.props.fetchPage(page, pageSize, sorted, this.search);
 	}
 
 	async songSelected(selectedIndex) {
@@ -217,11 +217,11 @@ export default class FileList extends Component {
 	}
 
 	render() {
-        console.timeEnd('fetch_to_render');
-		const { canDrop, isOver, connectDropTarget } = this.props;
-		const { files } = this.props;
+		console.timeEnd('fetch_to_render');
+		const {canDrop, isOver, connectDropTarget} = this.props;
+		const {files} = this.props;
 		const pages = this.props.settings.pages;
-		const { rows, search } = this.state;
+		const {rows, search} = this.state;
 
 		const columns = [
 			{
@@ -301,7 +301,7 @@ export default class FileList extends Component {
 						}
 					}}
 					onPageChange={page => this.setState({page: page})}
-                    onFetchData={this.fetchPage.bind(this)}
+					onFetchData={this.fetchPage.bind(this)}
 					page={this.state.page}
 					pages={pages}
 					showPageSizeOptions={false}

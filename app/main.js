@@ -5,7 +5,7 @@ const {app, BrowserWindow, ipcMain, shell, Menu, MenuItem} = require('electron')
 const windowStateKeeper = require('electron-window-state');
 const url = require('url');
 const path = require('path');
-import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
+import installExtension, {REACT_DEVELOPER_TOOLS} from 'electron-devtools-installer';
 import {enableLiveReload} from 'electron-compile';
 
 let dev = process.env.DEV === 'true';
@@ -28,9 +28,9 @@ function createWindow() {
 		};
 		windowArgs = {...windowArgs, ...devWindowArgs};
 
-        installExtension(REACT_DEVELOPER_TOOLS)
-            .then((name) => console.log(`Added Extension:  ${name}`))
-            .catch((err) => console.log('An error occurred: ', err));
+		installExtension(REACT_DEVELOPER_TOOLS)
+			.then((name) => console.log(`Added Extension:  ${name}`))
+			.catch((err) => console.log('An error occurred: ', err));
 	}
 
 	// Load the previous state with fallback to defaults
@@ -61,7 +61,7 @@ function createWindow() {
 	mainWindow.webContents.openDevTools();
 
 	// Emitted when the window is closed.
-	mainWindow.on('closed', function() {
+	mainWindow.on('closed', function () {
 		// Dereference the window object, usually you would store windows
 		// in an array if your app supports multi windows, this is the time
 		// when you should delete the corresponding element.
@@ -74,7 +74,9 @@ function createMenu() {
 
 	const preciousMenuItem = {
 		label: 'Dance!',
-		click() { shell.openExternal('https://www.youtube.com/watch?v=dQw4w9WgXcQ?autoplay=1'); }
+		click() {
+			shell.openExternal('https://www.youtube.com/watch?v=dQw4w9WgXcQ?autoplay=1');
+		}
 	};
 
 	if (dev) {
@@ -82,7 +84,7 @@ function createMenu() {
 		menu = Menu.getApplicationMenu();
 
 		menu.items.map(
-			(menuItem)  => {
+			(menuItem) => {
 				if (menuItem.label === 'Help') {
 					menuItem.submenu.clear();
 					menuItem.submenu.append(
@@ -96,7 +98,7 @@ function createMenu() {
 		// Create new
 		const subMenuHelp = {
 			label: 'Help',
-			submenu: [ preciousMenuItem ]
+			submenu: [preciousMenuItem]
 		};
 
 		menu = Menu.buildFromTemplate([subMenuHelp]);
