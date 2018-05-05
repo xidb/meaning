@@ -25,7 +25,7 @@ export default class FileList extends Component {
 	constructor(props) {
 		super(props);
 
-		this.keyThrottle = _.throttle(this.key, 200);
+		this.throttle = _.throttle(FileList.throttleCall, 200);
 
 		this.state = {
 			page: props.settings.page,
@@ -40,6 +40,8 @@ export default class FileList extends Component {
 		this.startRow = 0;
 		this.endRow = 9999999;
 		this.lastIndex = 9999999;
+		this.fetchPageArguments = {page: 0, pageSize: 24, sorted: [], search: ''};
+		this.search = '';
 	}
 
 	static propTypes = {
@@ -57,7 +59,7 @@ export default class FileList extends Component {
 		window.addEventListener('resize', this.updateDimensions.bind(this));
 	}
 
-	key(method) {
+    static throttleCall(method) {
 		method.call();
 	}
 
@@ -66,45 +68,45 @@ export default class FileList extends Component {
 
 		const home = () => {
 			if (this.state.page !== 0) {
-				this.setState({page: this.state.page - 1})
+				this.setState({page: 0})
 			}
 		};
-		shortcut.register(this.win, 'Home', () => { this.keyThrottle(home) });
+		shortcut.register(this.win, 'Home', () => { this.throttle(home) });
 
 		const end = () => {
 			if (this.state.page !== this.lastPage) {
 				this.setState({page: this.lastPage})
 			}
 		};
-		shortcut.register(this.win, 'End', () => { this.keyThrottle(end) });
+		shortcut.register(this.win, 'End', () => { this.throttle(end) });
 
 		const prevPage = () => {
 			if (this.state.page !== 0) {
 				this.setState({page: this.state.page - 1})
 			}
 		};
-		shortcut.register(this.win, 'Left', () => { this.keyThrottle(prevPage) });
+		shortcut.register(this.win, 'Left', () => { this.throttle(prevPage) });
 
 		const nextPage = () => {
 			if (this.canNext) {
 				this.setState({page: this.state.page + 1})
 			}
 		};
-		shortcut.register(this.win, 'Right', () => { this.keyThrottle(nextPage) });
+		shortcut.register(this.win, 'Right', () => { this.throttle(nextPage) });
 
 		const pageUp = () => {
 			if (this.state.page !== 0) {
 				this.setState({page: Math.max(this.state.page - 10, 0)})
 			}
 		};
-		shortcut.register(this.win, 'PageUp', () => { this.keyThrottle(pageUp) });
+		shortcut.register(this.win, 'PageUp', () => { this.throttle(pageUp) });
 
 		const pageDown = () => {
 			if (this.canNext) {
 				this.setState({page: Math.min(this.state.page + 10, this.lastPage)})
 			}
 		};
-		shortcut.register(this.win, 'PageDown', () => { this.keyThrottle(pageDown) });
+		shortcut.register(this.win, 'PageDown', () => { this.throttle(pageDown) });
 
 		const up = () => {
 			let toIndex = this.state.selectedIndex - 1;
@@ -125,7 +127,7 @@ export default class FileList extends Component {
 
 			void this.songSelected(toIndex);
 		};
-		shortcut.register(this.win, 'Up', () => { this.keyThrottle(up) });
+		shortcut.register(this.win, 'Up', () => { this.throttle(up) });
 
 		const down = () => {
 			let toIndex = this.state.selectedIndex + 1;
@@ -146,7 +148,7 @@ export default class FileList extends Component {
 
 			void this.songSelected(toIndex);
 		};
-		shortcut.register(this.win, 'Down', () => { this.keyThrottle(down) });
+		shortcut.register(this.win, 'Down', () => { this.throttle(down) });
 
 		const handleMouseWheel = (event) => {
 			if (event.target.tagName === 'TEXTAREA') {
@@ -155,9 +157,9 @@ export default class FileList extends Component {
 			}
 
 			if (event.deltaY > 0) {
-				this.keyThrottle(down);
+				this.throttle(down);
 			} else if (event.deltaY < 0) {
-				this.keyThrottle(up);
+				this.throttle(up);
 			}
 		};
 
@@ -169,12 +171,36 @@ export default class FileList extends Component {
 		shortcut.unregisterAll(this.win);
 	}
 
+	async fetchPage(state) {
+		console.time('fetch_to_render');
+		const isEvent = state.constructor.name === 'SyntheticEvent';
+        let {page, pageSize, sorted} = isEvent ? this.fetchPageArguments : state;
+
+        if (isEvent) {
+        	this.search = state.target.value;
+        }
+
+        const sortChanged = JSON.stringify(this.fetchPageArguments.sorted) !== JSON.stringify(sorted);
+        const searchChanged = this.fetchPageArguments.search !== this.search;
+
+        // reset page if sorting or searching started
+        if (sortChanged || searchChanged) {
+        	this.state.page = 0;
+        	page = 0;
+        }
+
+        this.fetchPageArguments = {page, pageSize, sorted, search: this.search};
+
+        await this.props.fetchPage(page, pageSize, sorted, this.search);
+	}
+
 	async songSelected(selectedIndex) {
-		const settings = JSON.stringify({
+		const settings = {
 			page: this.state.page,
 			selectedIndex: selectedIndex,
-			search: this.state.search
-		});
+			search: this.state.search,
+			rows: this.state.rows
+		};
 		void this.props.songSelected(_.find(this.pageRows, {_index: selectedIndex})['_original'], settings);
 	}
 
@@ -190,36 +216,12 @@ export default class FileList extends Component {
 		this.setState({ rows: Math.floor(tableHeight/rowHeight) });
 	}
 
-	shouldComponentUpdate(nextProps, nextState) {
-		if (this.state !== nextState) {
-			return true;
-		}
-
-		if (this.props.files.length === nextProps.files.length) {
-			return false;
-		}
-
-		return true;
-	}
-
 	render() {
+        console.timeEnd('fetch_to_render');
 		const { canDrop, isOver, connectDropTarget } = this.props;
-		let { files } = this.props;
-		const { rows } = this.state;
-		const { search } = this.state;
-
-		if (search !== '') {
-			const searchLowerCase = search.toLowerCase();
-			files = files.filter(file => {
-
-				return 	String(file.albumartist).toLowerCase().includes(searchLowerCase)    ||
-						String(file.year).includes(searchLowerCase)                         ||
-						String(file.album).toLowerCase().includes(searchLowerCase)          ||
-						String(file.discnumber).includes(searchLowerCase)                   ||
-						String(file.track).includes(searchLowerCase)                        ||
-						String(file.title).toLowerCase().includes(searchLowerCase)
-			});
-		}
+		const { files } = this.props;
+		const pages = this.props.settings.pages;
+		const { rows, search } = this.state;
 
 		const columns = [
 			{
@@ -256,13 +258,14 @@ export default class FileList extends Component {
 			<div className="filelist">
 				<div className="filelist__buttons">
 					<input
-						value={search}
+						value={this.search}
 						className="filelist__search"
 						placeholder="Search"
-						onChange={e => this.setState({search: e.target.value, page: 0})}
+						onChange={this.fetchPage.bind(this)}
 					/>
 				</div>
 				<ReactTable
+                    manual
 					data={files}
 					columns={columns}
 					getProps={(props) => {
@@ -298,7 +301,9 @@ export default class FileList extends Component {
 						}
 					}}
 					onPageChange={page => this.setState({page: page})}
+                    onFetchData={this.fetchPage.bind(this)}
 					page={this.state.page}
+					pages={pages}
 					showPageSizeOptions={false}
 					pageSize={rows}
 					className="-striped -highlight"

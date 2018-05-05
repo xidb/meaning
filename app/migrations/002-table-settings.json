@@ -1,7 +1,8 @@
 {
   "queries": [
 	"CREATE TABLE settings (id INTEGER PRIMARY KEY, component TEXT, settings TEXT);",
-	"INSERT INTO settings (component, settings) VALUES ('FileList', '{\"page\":0,\"selectedIndex\":-1,\"search\":\"\"}');",
-	"INSERT INTO settings (component, settings) VALUES ('Container', '{\"selected\":{\"file\":{},\"imagePath\":\"assets/record.svg\"}}');"
+	"INSERT INTO settings (component, settings) VALUES ('FileList', '{\"page\":0,\"rows\":30,\"selectedIndex\":-1,\"search\":\"\"}');",
+	"INSERT INTO settings (component, settings) VALUES ('Container', '{\"selected\":{\"file\":{},\"imagePath\":\"assets/record.svg\"}}');",
+	"INSERT INTO settings (component, settings) VALUES ('Database', '{\"count\":0')};"
   ]
 }

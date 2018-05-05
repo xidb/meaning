@@ -38,6 +38,8 @@ export default class Container extends Component {
 		};
 
 		this.settings = {};
+		this.cache = {};
+		this.totalSongs = 0;
 
 		void this.fetchFromDb();
 	}
@@ -45,37 +47,101 @@ export default class Container extends Component {
 	async fetchFromDb() {
 		await db.connectToDB('app/db.sqlite');
 
-		// await db.run('DELETE FROM songs');
+        // await db.run('DELETE FROM songs');
+
 		const settings = await db.queryRows('SELECT * FROM settings');
 		await this.sendSettingsToComponents(settings);
 		this.setState({selected: this.settings['Container'].selected});
 
-		console.time('db_fetch_first_100');
-		const firstPage = await db.queryRows(
-			'SELECT * FROM songs ORDER by albumartist, year, album, discnumber, path , track LIMIT 100'
-		);
-		console.timeEnd('db_fetch_first_100');
+        console.time('db_fetch_count');
+        this.totalSongs = await db.queryOneRow('SELECT COUNT(id) as count FROM songs')
+            .then((result) => {
+                return result.count;
+            });
+        console.timeEnd('db_fetch_count');
 
-		if (firstPage.length > 0) {
-			this.setFiles(firstPage);
-		}
+        // reindex and update count if it changed on next app start
+        if (this.totalSongs !== this.settings['Database'].count) {
+            console.time('db_update_index');
+            await db.queryRows('DROP INDEX order_idx');
+            await db.queryRows(
+                'CREATE UNIQUE INDEX order_idx ON songs (albumartist, year, album, discnumber, path, track)'
+            );
+            console.timeEnd('db_update_index');
 
-		this.setState({render: true});
+            this.settings['Database'].count = this.totalSongs;
+            this.saveSettings([{component: 'Database', object: this.settings['Database']}])
+        }
 
-		if (firstPage.length < 100) {
-			return;
-		}
+        await this.fetchPage();
 
-		console.time('db_fetch_first_all');
-		const songs = await db.queryRows(
-			'SELECT * FROM songs ORDER by albumartist, year, album, discnumber, path, track LIMIT -1 OFFSET 100'
-		);
-		console.timeEnd('db_fetch_first_all');
-
-		if (songs.length > 0) {
-			this.setFiles(songs);
-		}
+        this.setState({render: true});
 	}
+
+	async fetchPage(nextPage, pageLength, sorted, filtered) {
+        const page = nextPage !== void 0 ? nextPage : this.settings['FileList'].page || 0;
+        const rows = pageLength !== void 0 ? pageLength : this.settings['FileList'].rows;
+
+        const offset = page * rows;
+
+        const hash = btoa(page + rows + JSON.stringify(sorted) + filtered);
+
+        if (this.cache[hash] === void 0) {
+            console.time('db_fetch_page');
+
+            // ordering
+            let order = 'ORDER by ';
+            if (sorted !== void 0 && sorted.length !== 0) {
+                let orderColumns = [];
+                for (const column of sorted) {
+                    const direction = column.desc ? 'DESC' : 'ASC';
+                    orderColumns.push(`${column.id} ${direction}`);
+                }
+                order += orderColumns.join(', ');
+            } else {
+                order += 'albumartist, year, album, discnumber, path, track';
+            }
+
+            // filtering
+            let filter = '';
+            if (filtered) {
+                let filterColumns = [];
+                for (const column of ['albumartist', 'year', 'album', 'discnumber', 'path', 'track']) {
+                    filterColumns.push(`${column} LIKE '%${filtered}%'`);
+                }
+                filter += 'WHERE ' + filterColumns.join(' OR ');
+            }
+
+            const query = `SELECT * FROM songs
+	            INNER JOIN (
+	                SELECT id FROM songs
+	                ${filter}
+	                ${order}
+	                LIMIT ${rows} OFFSET ${offset}
+	            ) AS song_ids USING(id)`;
+
+            const pageRows = await db.queryRows(query);
+            console.timeEnd('db_fetch_page');
+
+            let countQuery = this.totalSongs;
+            if (filter) {
+                countQuery = await db.queryOneRow(`SELECT COUNT(id) as count FROM songs ${filter} ${order}`)
+                    .then((result) => {
+                        return result.count;
+                    });
+            }
+
+            this.settings['FileList'].pages = Math.ceil(countQuery/rows);
+
+            if (pageRows.length > 0) {
+                this.cache[hash] = pageRows;
+            }
+        }
+
+        if (this.cache[hash] !== void 0) {
+            this.setState({files: this.cache[hash]});
+        }
+    }
 
 	async sendSettingsToComponents(settings) {
 		settings.map(row => {
@@ -252,33 +318,27 @@ export default class Container extends Component {
 
 		const imagePath = await this.searchImage(file);
 
-		const containerSettings = JSON.stringify({selected: {file: file, imagePath: imagePath}});
-		this.saveSettingsThrottle(containerSettings, fileListSettings);
+		const settings = [
+			{component: 'Container', object: {selected: {file: file, imagePath: imagePath}}},
+			{component: 'FileList', object: fileListSettings}
+		];
+		this.saveSettingsThrottle(settings);
 
 		this.setState({selected: {file: file, imagePath: imagePath}});
 	}
 
-	saveSettings(containerSettings, fileListSettings) {
-		// save selected
-		db.updateRow(
-			'settings',
-			{ settings: containerSettings },
-			[{
-				column: 'component',
-				comparator: '=',
-				value: 'Container'
-			}]
-		);
-
-		db.updateRow(
-			'settings',
-			{ settings: fileListSettings },
-			[{
-				column: 'component',
-				comparator: '=',
-				value: 'FileList'
-			}]
-		);
+	saveSettings(settingsCollection) {
+        for (const settings of settingsCollection) {
+            void db.updateRow(
+                'settings',
+                { settings: JSON.stringify(settings.object) },
+                [{
+                    column: 'component',
+                    comparator: '=',
+                    value: settings.component
+                }]
+            );
+        }
 	}
 
 	async searchImage(file) {
@@ -367,6 +427,7 @@ export default class Container extends Component {
 				files={files}
 				settings={this.settings['FileList']}
 				songSelected={this.songSelected.bind(this)}
+				fetchPage={this.fetchPage.bind(this)}
 			/>;
 			lyrics = <Lyrics
 				file={this.state.selected.file}
