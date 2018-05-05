@@ -5,6 +5,7 @@ const {app, BrowserWindow, ipcMain, shell, Menu, MenuItem} = require('electron')
 const windowStateKeeper = require('electron-window-state');
 const url = require('url');
 const path = require('path');
+import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
 import {enableLiveReload} from 'electron-compile';
 
 let dev = process.env.DEV === 'true';
@@ -26,6 +27,10 @@ function createWindow() {
 			height: 720
 		};
 		windowArgs = {...windowArgs, ...devWindowArgs};
+
+        installExtension(REACT_DEVELOPER_TOOLS)
+            .then((name) => console.log(`Added Extension:  ${name}`))
+            .catch((err) => console.log('An error occurred: ', err));
 	}
 
 	// Load the previous state with fallback to defaults
