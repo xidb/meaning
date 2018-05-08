@@ -266,7 +266,7 @@ export default class FileList extends Component {
 			<div className="filelist">
 				<div className="filelist__buttons">
 					<input
-						value={this.search}
+						defaultValue={this.search}
 						className="filelist__search"
 						placeholder="Search"
 						onChange={this.fetchPage.bind(this)}

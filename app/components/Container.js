@@ -134,9 +134,7 @@ export default class Container extends Component {
 
 			this.settings['FileList'].pages = Math.ceil(countQuery / rows);
 
-			if (pageRows.length > 0) {
-				this.cache[hash] = pageRows;
-			}
+			this.cache[hash] = pageRows;
 		}
 
 		if (this.cache[hash] !== void 0) {
@@ -420,7 +418,7 @@ export default class Container extends Component {
 		let lyrics;
 		let containerClass;
 
-		if (files.length === 0) {
+		if (this.totalSongs === 0) {
 			target = <Target accepts={[FILE]} onDrop={this.handleFileDrop}/>;
 			containerClass = 'container container--target';
 		} else {
