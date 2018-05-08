@@ -49,6 +49,7 @@ export default class FileList extends Component {
 		this.startRow = 0;
 		this.endRow = 9999999;
 		this.lastIndex = 9999999;
+		this.settings = {};
 	}
 
 	static propTypes = {
@@ -70,7 +71,16 @@ export default class FileList extends Component {
 		method.call();
 	}
 
+	tick() {
+		this.saveSettings();
+
+		this.ticks++;
+	}
+
 	componentDidMount() {
+		this.ticks = 0;
+		this.interval = setInterval(() => this.tick(), 5000);
+
 		this.win = remote.getCurrentWindow();
 
 		const home = () => {
@@ -178,6 +188,17 @@ export default class FileList extends Component {
 		shortcut.unregisterAll(this.win);
 	}
 
+	saveSettings() {
+		const settings = {
+			page: this.state.page,
+			rows: this.state.rows,
+			search: this.search,
+			sorted: this.sorted
+		};
+		this.settings = {...this.settings, ...settings};
+		void this.props.saveSettings([{component: 'FileList', object: this.settings}]);
+	}
+
 	async fetchPage(state) {
 		console.time('fetch_to_render');
 		const isEvent = state.constructor.name === 'SyntheticEvent';
@@ -210,7 +231,8 @@ export default class FileList extends Component {
 			search: this.search,
 			sorted: this.sorted
 		};
-		void this.props.songSelected(_.find(this.pageRows, {_index: selectedIndex})['_original'], settings);
+		this.settings = {...this.settings, ...settings};
+		void this.props.songSelected(_.find(this.pageRows, {_index: selectedIndex})['_original'], this.settings);
 	}
 
 	updateDimensions() {

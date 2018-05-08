@@ -17,5 +17,13 @@ module.exports.insert = async function(file) {
 	}
 
 	await db.connectToDB('app/db.sqlite');
-	await db.insertRow('songs', file);
+	const filePath = file.path.replace(/'/g, "''");
+	const exist = await db.queryOneRow(`SELECT COUNT(id) as count FROM songs WHERE path = '${filePath}'`)
+		.then((result) => {
+			return result.count;
+		});
+
+	if (!exist) {
+		void db.insertRow('songs', file);
+	}
 };

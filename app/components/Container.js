@@ -16,7 +16,7 @@ import { requireTaskPool } from 'electron-remote';
 import Task from './Task';
 // Set number of max processes according to cpu cores, but reserve one for main and for renderer
 const TaskPool = requireTaskPool(require.resolve('./Task'), Math.min(2, os.cpus().length - 2));
-const TaskDb = requireTaskPool(require.resolve('./TaskDb'), 1);
+const TaskPoolDb = requireTaskPool(require.resolve('./TaskDb'), Math.min(2, os.cpus().length - 2));
 
 import Target from './Target';
 import FileList from './FileList';
@@ -30,6 +30,7 @@ export default class Container extends Component {
 
 		this.handleFileDrop = this.handleFileDrop.bind(this);
 		this.saveSettingsThrottle = _.throttle(this.saveSettings, 500);
+		this.updateStoppedThrottle = _.throttle(this.updateStopped, 1000);
 
 		this.state = {
 			files: [],
@@ -41,6 +42,7 @@ export default class Container extends Component {
 		this.settings = {};
 		this.cache = {};
 		this.totalSongs = 0;
+		this.forceFetchPage = false;
 
 		void this.fetchFromDb();
 	}
@@ -72,6 +74,8 @@ export default class Container extends Component {
 
 			this.settings['Database'].count = this.totalSongs;
 			this.saveSettings([{component: 'Database', object: this.settings['Database']}])
+
+			this.forceFetchPage = true;
 		}
 
 		await this.fetchPage();
@@ -87,7 +91,7 @@ export default class Container extends Component {
 
 		const hash = btoa(page + rows + JSON.stringify(sorted) + encodeURIComponent(filtered));
 
-		if (this.cache[hash] === void 0) {
+		if (this.cache[hash] === void 0 || this.forceFetchPage) {
 			console.time('db_fetch_page');
 
 			// ordering
@@ -133,8 +137,9 @@ export default class Container extends Component {
 			}
 
 			this.settings['FileList'].pages = Math.ceil(countQuery / rows);
-
 			this.cache[hash] = pageRows;
+
+			this.forceFetchPage = false;
 		}
 
 		if (this.cache[hash] !== void 0) {
@@ -159,7 +164,6 @@ export default class Container extends Component {
 		}
 
 		this.dbInsertCounter = this.fileCount = 0;
-		this.initFilesLength = this.state.files.length;
 		this.updateMode = false;
 
 		let dropped = _.sortBy(monitor.getItem().files, 'path');
@@ -183,7 +187,7 @@ export default class Container extends Component {
 			this.fileCount += await TaskPool.fileCount(paths);
 			const subdirsChunked = await TaskPool.getSubdirsChunked(paths, 5);
 
-			for (let chunk of subdirsChunked) {
+			for (const chunk of subdirsChunked) {
 				const filePathArrays = await TaskPool.parseDirs(chunk);
 				let files = [];
 
@@ -208,9 +212,9 @@ export default class Container extends Component {
 		this.setStatusMessage(audio);
 
 		if (audio.length < 20) {
-			this.setFiles(_.sortBy(await Task.getMetadata(audio), 'path'), true);
+			this.saveFiles(_.sortBy(await Task.getMetadata(audio), 'path'), true);
 		} else {
-			this.setFiles(_.sortBy(await TaskPool.getMetadata(audio), 'path'), true);
+			this.saveFiles(_.sortBy(await TaskPool.getMetadata(audio), 'path'), true);
 		}
 	}
 
@@ -218,7 +222,7 @@ export default class Container extends Component {
 		return files.filter(file => {
 			let exists = false;
 
-			for (let existingFile of this.state.files) {
+			for (const existingFile of this.state.files) {
 				if (existingFile.path === file.path) {
 					exists = true;
 					break;
@@ -229,7 +233,7 @@ export default class Container extends Component {
 		});
 	}
 
-	setFiles(files, toDb = false) {
+	saveFiles(files) {
 		files = files.filter(file => {
 			if (file.error !== void 0) {
 				this.setStatusMessage(file.error);
@@ -238,19 +242,17 @@ export default class Container extends Component {
 			return file.error === void 0;
 		});
 
-		if (files.length > 0) {
-			this.setState({files: [...this.state.files, ...files]});
-		}
-
-		if (toDb === false) {
-			return;
-		}
-
 		files.map(file => {
-			TaskDb.insert(file).then(() => {
+			TaskPoolDb.insert(file).then(() => {
 				this.createStatusMessage(file)
 			});
 		});
+	}
+
+	updateStopped() {
+		ipcRenderer.send('progress', 0);
+		this.updatingDb = false;
+		void this.fetchFromDb();
 	}
 
 	createStatusMessage(file) {
@@ -258,11 +260,11 @@ export default class Container extends Component {
 		this.updatingDb = true;
 
 		const insertCounter = this.updateMode
-			? this.initFilesLength + this.dbInsertCounter
+			? this.totalSongs + this.dbInsertCounter
 			: this.dbInsertCounter;
 
 		const finishCounter = this.updateMode
-			? this.state.files.length
+			? this.totalSongs
 			: this.fileCount;
 
 		this.lastInsertTick = this.ticks;
@@ -276,8 +278,7 @@ export default class Container extends Component {
 		}
 
 		if (insertCounter === finishCounter) {
-			ipcRenderer.send('progress', 0);
-			this.updatingDb = false;
+			this.updateStoppedThrottle();
 		}
 	}
 
@@ -330,9 +331,10 @@ export default class Container extends Component {
 
 	saveSettings(settingsCollection) {
 		for (const settings of settingsCollection) {
+			const curSettings = this.settings[settings.component];
 			void db.updateRow(
 				'settings',
-				{settings: JSON.stringify(settings.object)},
+				{settings: JSON.stringify({...curSettings, ...settings.object})},
 				[{
 					column: 'component',
 					comparator: '=',
@@ -389,8 +391,7 @@ export default class Container extends Component {
 	tick() {
 		// Check maybe update not doing anything for 3 seconds
 		if (this.updatingDb && (this.ticks - this.lastInsertTick) >= 3) {
-			ipcRenderer.send('progress', 0);
-			this.updatingDb = false;
+			this.updateStoppedThrottle();
 		}
 
 		this.ticks++;
@@ -427,6 +428,7 @@ export default class Container extends Component {
 				onDrop={this.handleFileDrop}
 				files={files}
 				settings={this.settings['FileList']}
+				saveSettings={this.saveSettings.bind(this)}
 				songSelected={this.songSelected.bind(this)}
 				fetchPage={this.fetchPage.bind(this)}
 			/>;
