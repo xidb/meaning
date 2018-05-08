@@ -85,7 +85,9 @@ export default class Container extends Component {
 
 	async fetchPage(nextPage, pageLength, sorted, filtered) {
 		const page = nextPage !== void 0 ? nextPage : this.settings['FileList'].page || 0;
-		const rows = pageLength !== void 0 ? pageLength : this.settings['FileList'].rows;
+		const rows = pageLength !== void 0 ? pageLength : this.settings['FileList'].rows || 24;
+		const order = sorted !== void 0 ? sorted : this.settings['FileList'].sorted || [];
+		const search = filtered !== void 0 ? filtered : this.settings['FileList'].search || '';
 
 		const offset = page * rows;
 
@@ -95,33 +97,33 @@ export default class Container extends Component {
 			console.time('db_fetch_page');
 
 			// ordering
-			let order = 'ORDER by ';
-			if (sorted !== void 0 && sorted.length !== 0) {
+			let orderQuery = 'ORDER by ';
+			if (order.length !== 0) {
 				let orderColumns = [];
 				for (const column of sorted) {
 					const direction = column.desc ? 'DESC' : 'ASC';
 					orderColumns.push(`${column.id} ${direction}`);
 				}
-				order += orderColumns.join(', ');
+				orderQuery += orderColumns.join(', ');
 			} else {
-				order += 'albumartist, year, album, discnumber, path, track';
+				orderQuery += 'albumartist, year, album, discnumber, path, track';
 			}
 
 			// filtering
-			let filter = '';
-			if (filtered) {
+			let searchQuery = '';
+			if (search) {
 				let filterColumns = [];
 				for (const column of ['albumartist', 'year', 'album', 'discnumber', 'path', 'track']) {
-					filterColumns.push(`${column} LIKE '%${filtered}%'`);
+					filterColumns.push(`${column} LIKE '%${search}%'`);
 				}
-				filter += 'WHERE ' + filterColumns.join(' OR ');
+				searchQuery += 'WHERE ' + filterColumns.join(' OR ');
 			}
 
 			const query = `SELECT * FROM songs
 	            INNER JOIN (
 	                SELECT id FROM songs
-	                ${filter}
-	                ${order}
+	                ${searchQuery}
+	                ${orderQuery}
 	                LIMIT ${rows} OFFSET ${offset}
 	            ) AS song_ids USING(id)`;
 
@@ -129,8 +131,8 @@ export default class Container extends Component {
 			console.timeEnd('db_fetch_page');
 
 			let countQuery = this.totalSongs;
-			if (filter) {
-				countQuery = await db.queryOneRow(`SELECT COUNT(id) as count FROM songs ${filter} ${order}`)
+			if (search) {
+				countQuery = await db.queryOneRow(`SELECT COUNT(id) as count FROM songs ${searchQuery} ${orderQuery}`)
 					.then((result) => {
 						return result.count;
 					});
