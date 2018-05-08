@@ -85,7 +85,7 @@ export default class Container extends Component {
 
 		const offset = page * rows;
 
-		const hash = btoa(page + rows + JSON.stringify(sorted) + filtered);
+		const hash = btoa(page + rows + JSON.stringify(sorted) + encodeURIComponent(filtered));
 
 		if (this.cache[hash] === void 0) {
 			console.time('db_fetch_page');
