@@ -63,8 +63,11 @@ export default class Container extends Component {
 			});
 		console.timeEnd('db_fetch_count');
 
-		// reindex and update count if it changed on next app start
-		if (this.totalSongs !== this.settings['Database'].count) {
+		// reindex and update count if it changed for more than 1%
+		const dbCount = this.settings['Database'].count;
+		const countToUpdateIndex = Math.ceil(dbCount + dbCount/100);
+
+		if (this.totalSongs >= countToUpdateIndex) {
 			console.time('db_update_index');
 			await db.queryRows('DROP INDEX order_idx');
 			await db.queryRows(
@@ -91,7 +94,7 @@ export default class Container extends Component {
 
 		const offset = page * rows;
 
-		const hash = btoa(page + rows + JSON.stringify(sorted) + encodeURIComponent(filtered));
+		const hash = btoa(page + rows + JSON.stringify(order) + encodeURIComponent(search));
 
 		if (this.cache[hash] === void 0 || this.forceFetchPage) {
 			console.time('db_fetch_page');
@@ -100,7 +103,7 @@ export default class Container extends Component {
 			let orderQuery = 'ORDER by ';
 			if (order.length !== 0) {
 				let orderColumns = [];
-				for (const column of sorted) {
+				for (const column of order) {
 					const direction = column.desc ? 'DESC' : 'ASC';
 					orderColumns.push(`${column.id} ${direction}`);
 				}
