@@ -6,6 +6,7 @@ import _ from 'lodash';
 import Promise from 'bluebird';
 import taglib from 'taglib2';
 import mime from 'mime';
+import md5 from 'md5';
 
 const fileFormats = [
 	'mp3', 'm4a', 'ogg', 'wma', 'm4b', 'm4p', 'mp4', '3g2',
@@ -114,7 +115,7 @@ module.exports.getMetadata = async function(files) {
 						? meta['album']
 						: file.path.split('\\').slice(0, -1).join('\\'); // use dir path if album empty
 
-					meta['image_name'] = btoa(encodeURIComponent(meta['albumartist'] + album));
+					meta['image_name'] = md5(encodeURIComponent(meta['albumartist'] + album));
 
 					if (meta['pictures']) {
 						const picture = meta['pictures'][0];
