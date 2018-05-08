@@ -30,8 +30,17 @@ export default class FileList extends Component {
 		this.state = {
 			page: props.settings.page,
 			selectedIndex: props.settings.selectedIndex,
-			search: props.settings.search,
-			rows: 24,
+			rows: props.settings.rows
+		};
+
+		this.search = props.settings.search;
+		this.sorted = props.settings.sorted;
+
+		this.fetchPageArguments = {
+			page: this.state.page,
+			pageSize: this.state.rows,
+			sorted: this.sorted,
+			search: this.search
 		};
 
 		this.lastPage = 9999999;
@@ -40,8 +49,6 @@ export default class FileList extends Component {
 		this.startRow = 0;
 		this.endRow = 9999999;
 		this.lastIndex = 9999999;
-		this.fetchPageArguments = {page: 0, pageSize: 24, sorted: [], search: ''};
-		this.search = '';
 	}
 
 	static propTypes = {
@@ -185,6 +192,7 @@ export default class FileList extends Component {
 
 		// reset page if sorting or searching started
 		if (sortChanged || searchChanged) {
+			this.sorted = sorted;
 			this.state.page = 0;
 			page = 0;
 		}
@@ -198,8 +206,9 @@ export default class FileList extends Component {
 		const settings = {
 			page: this.state.page,
 			selectedIndex: selectedIndex,
-			search: this.state.search,
-			rows: this.state.rows
+			rows: this.state.rows,
+			search: this.search,
+			sorted: this.sorted
 		};
 		void this.props.songSelected(_.find(this.pageRows, {_index: selectedIndex})['_original'], settings);
 	}
@@ -218,11 +227,10 @@ export default class FileList extends Component {
 
 	render() {
 		console.timeEnd('fetch_to_render');
-		const {canDrop, isOver, connectDropTarget} = this.props;
-		const {files} = this.props;
+		const { canDrop, isOver, connectDropTarget } = this.props;
+		const { files } = this.props;
 		const pages = this.props.settings.pages;
-		const {rows, search} = this.state;
-
+		const { page, rows } = this.state;
 		const columns = [
 			{
 				Header: 'Artist',
@@ -300,9 +308,10 @@ export default class FileList extends Component {
 							}
 						}
 					}}
+					defaultSorted={this.sorted}
 					onPageChange={page => this.setState({page: page})}
 					onFetchData={this.fetchPage.bind(this)}
-					page={this.state.page}
+					page={page}
 					pages={pages}
 					showPageSizeOptions={false}
 					pageSize={rows}
